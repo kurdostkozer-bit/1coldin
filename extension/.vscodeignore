@@ -1,0 +1,40 @@
+# VSCode Extension - Files to exclude from package
+
+# Exclude TypeScript source files (keep compiled JS in out/)
+**/*.ts
+**/*.map
+
+# But keep HTML/CSS/JS assets (not TypeScript)
+!src/ui/html/*.html
+!src/ui/assets/*.css
+!src/ui/assets/*.js
+
+# Development files
+.kiro/
+.vscode/
+watch-reload.ps1
+tsconfig.json
+
+# Node modules (dev dependencies)
+node_modules/
+
+# Build artifacts
+*.vsix
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+CHANGELOG.md
+
+# Test files
+test/
+tests/
+
+# Misc
+*.log
+.DS_Store
+Thumbs.db

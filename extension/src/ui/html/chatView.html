@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src {{STYLE_URI}} 'unsafe-inline'; script-src {{SCRIPT_URI}} 'unsafe-inline';">
+<link rel="stylesheet" href="{{STYLE_URI}}">
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- AUTH SCREEN (shown when not logged in) -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="auth-screen" style="display:none;flex-direction:column;align-items:center;justify-content:center;height:100vh;padding:24px;box-sizing:border-box;gap:16px;">
+
+  <div style="font-size:2rem;margin-bottom:4px;">✦</div>
+  <div style="font-size:1.1rem;font-weight:700;color:var(--vscode-foreground,#e2e8f0);">KurdBox AI</div>
+  <div style="font-size:0.75rem;color:var(--vscode-descriptionForeground,#94a3b8);margin-bottom:8px;">بوابة الذكاء الاصطناعي</div>
+
+  <div id="auth-tabs" style="display:flex;gap:0;border-radius:8px;overflow:hidden;border:1px solid rgba(99,102,241,0.25);width:100%;">
+    <button id="tab-login" onclick="showTab('login')"
+      style="flex:1;padding:8px;font-size:0.8rem;border:none;cursor:pointer;background:rgba(99,102,241,0.2);color:#a5b4fc;font-weight:600;">
+      تسجيل دخول
+    </button>
+    <button id="tab-register" onclick="showTab('register')"
+      style="flex:1;padding:8px;font-size:0.8rem;border:none;cursor:pointer;background:transparent;color:var(--vscode-descriptionForeground,#94a3b8);">
+      حساب جديد
+    </button>
+  </div>
+
+  <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
+    <input id="auth-username" type="text" placeholder="اسم المستخدم"
+      style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.05);color:var(--vscode-foreground,#e2e8f0);font-size:0.85rem;box-sizing:border-box;outline:none;"
+      onkeydown="if(event.key==='Enter')authSubmit()"/>
+    <input id="auth-password" type="password" placeholder="كلمة المرور"
+      style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(99,102,241,0.3);background:rgba(99,102,241,0.05);color:var(--vscode-foreground,#e2e8f0);font-size:0.85rem;box-sizing:border-box;outline:none;"
+      onkeydown="if(event.key==='Enter')authSubmit()"/>
+  </div>
+
+  <div id="auth-error" style="display:none;color:#ef4444;font-size:0.78rem;background:rgba(239,68,68,0.1);padding:8px 12px;border-radius:8px;border:1px solid rgba(239,68,68,0.2);width:100%;box-sizing:border-box;text-align:center;"></div>
+
+  <button id="auth-btn" onclick="authSubmit()"
+    style="width:100%;padding:10px;border-radius:8px;border:none;background:rgba(99,102,241,0.85);color:#fff;font-size:0.88rem;font-weight:600;cursor:pointer;">
+    دخول
+  </button>
+
+  <div style="font-size:0.7rem;color:var(--vscode-descriptionForeground,#64748b);text-align:center;line-height:1.5;">
+    أول مستخدم يُسجّل يصبح مشرفاً تلقائياً
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- SETUP SCREEN (shown after first-time register as admin, to add API keys) -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="setup-screen" style="display:none;flex-direction:column;padding:16px;box-sizing:border-box;gap:12px;height:100vh;overflow-y:auto;">
+
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:1.1rem;">🔑</span>
+    <span style="font-size:0.95rem;font-weight:700;color:var(--vscode-foreground,#e2e8f0);">إعداد مفاتيح API</span>
+  </div>
+  <div style="font-size:0.75rem;color:var(--vscode-descriptionForeground,#94a3b8);">
+    أضف مفتاح واحد على الأقل لبدء الاستخدام. يمكنك التخطي وإضافتها لاحقاً من لوحة التحكم.
+  </div>
+
+  <div id="provider-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+  <div id="setup-error" style="display:none;color:#ef4444;font-size:0.75rem;background:rgba(239,68,68,0.1);padding:8px 12px;border-radius:8px;border:1px solid rgba(239,68,68,0.2);"></div>
+  <div id="setup-success" style="display:none;color:#10b981;font-size:0.75rem;background:rgba(16,185,129,0.1);padding:8px 12px;border-radius:8px;border:1px solid rgba(16,185,129,0.2);"></div>
+
+  <div style="display:flex;gap:8px;margin-top:4px;">
+    <button onclick="finishSetup()"
+      style="flex:1;padding:10px;border-radius:8px;border:none;background:rgba(99,102,241,0.85);color:#fff;font-size:0.85rem;font-weight:600;cursor:pointer;">
+      ابدأ الاستخدام ✦
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- MAIN CHAT APP (hidden until logged in) -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div id="app-screen" style="display:none;flex-direction:column;height:100vh;">
+
+  <!-- Approval Overlay -->
+  <div class="overlay" id="overlay" style="display:none">
+    <div class="approval-card">
+      <div class="approval-title"><span>⚠️ Approval Required</span><span class="approval-badge" id="appr-badge"></span></div>
+      <div class="approval-path" id="appr-path"></div>
+      <pre class="approval-diff" id="appr-diff"></pre>
+      <div class="approval-btns">
+        <button class="btn-reject" onclick="sendApproval(false)">✕ Reject</button>
+        <button class="btn-approve" onclick="sendApproval(true)">✓ Approve</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Panel -->
+  <div class="history-panel" id="history-panel" style="display:none" onclick="if(event.target===this)closeHistory()">
+    <div class="history-header">
+      <span class="history-title">📜 سجل المحادثات</span>
+      <button class="history-close" onclick="toggleHistory()">✕</button>
+    </div>
+    <div class="history-list" id="history-list"></div>
+    <div class="history-footer">
+      <button class="history-btn" onclick="clearHistory()">🗑️ مسح السجل</button>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">✦</div>
+    <span class="header-title" id="header-title">KurdBox AI</span>
+    <button class="history-toggle-btn" onclick="toggleHistory()" title="سجل المحادثات">📜</button>
+    <div class="status-pill" id="status-pill"><span class="dot"></span><span id="status-text">جاري...</span></div>
+  </div>
+
+  <!-- Agent toolbar -->
+  <div class="agent-toolbar" id="agent-toolbar" style="display:none">
+    <span class="root-badge" id="root-badge" title="Workspace Root">—</span>
+    <span class="step-counter" id="step-counter">Step — / 20</span>
+    <button class="stop-btn" id="stop-btn" onclick="stopLoop()">⏹ Stop</button>
+  </div>
+
+  <!-- Tool log -->
+  <div class="tool-log" id="tool-log" style="display:none">
+    <div class="tool-log-header" onclick="toggleLog()">🔧 Tool calls <span id="log-arrow">▾</span></div>
+    <div class="tool-log-entries" id="log-entries"></div>
+  </div>
+
+  <div class="adv-toggle"><button onclick="toggleAdvanced()">⚙ إعدادات متقدمة <span id="adv-arrow">▾</span></button></div>
+  <div class="advanced-panel" id="advanced-panel">
+    <div class="adv-row">
+      <select id="sel-provider" onchange="onProviderChange()"></select>
+      <select id="sel-model"></select>
+    </div>
+    <div class="adv-row">
+      <label class="stream-toggle"><input type="checkbox" id="chk-stream"> تدفق الاستجابة</label>
+    </div>
+  </div>
+
+  <!-- Debug Banner -->
+  <div class="debug-banner" id="debug-banner" style="display:none;margin:6px 10px;padding:8px 10px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:10px;gap:8px;align-items:center;flex-shrink:0;">
+    <span style="flex:1;font-size:10px;color:#fbbf24;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="debug-preview"></span>
+    <button onclick="sendDebug()" style="padding:3px 10px;font-size:10px;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.3);color:#fbbf24;border-radius:6px;cursor:pointer;">🔍 حلّل</button>
+    <button onclick="dismissDebug()" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;padding:0 2px;">✕</button>
+  </div>
+
+  <div class="messages" id="msgs" style="flex:1;overflow-y:auto;"><div class="msg-system">KurdBox AI جاهز ✦</div></div>
+
+  <div class="input-area">
+    <div class="input-box">
+      <textarea id="inp" placeholder="اسألني أي شيء..." rows="1" oninput="autoResize(this)" onkeydown="onKey(event)"></textarea>
+      <button class="send-btn" id="btn" onclick="send()">↑</button>
+    </div>
+    <div class="input-hint" id="input-hint">Enter إرسال &nbsp;·&nbsp; Shift+Enter سطر جديد</div>
+  </div>
+
+</div><!-- /#app-screen -->
+
+<script src="{{SCRIPT_URI}}"></script>
+
+<script>
+const vscode = acquireVsCodeApi();
+
+let agentMode = false, loopRunning = false, pendingCallId = null, logVisible = true, pendingDebug = '';
+let sending = false;
+let currentAuthMode = 'login'; // 'login' | 'register'
+
+// ── Auth UI ───────────────────────────────────────────────────────────────────
+
+function showTab(mode) {
+  currentAuthMode = mode;
+  const isLogin = mode === 'login';
+  document.getElementById('tab-login').style.background = isLogin ? 'rgba(99,102,241,0.2)' : 'transparent';
+  document.getElementById('tab-login').style.color = isLogin ? '#a5b4fc' : 'var(--vscode-descriptionForeground,#94a3b8)';
+  document.getElementById('tab-register').style.background = !isLogin ? 'rgba(99,102,241,0.2)' : 'transparent';
+  document.getElementById('tab-register').style.color = !isLogin ? '#a5b4fc' : 'var(--vscode-descriptionForeground,#94a3b8)';
+  document.getElementById('auth-btn').textContent = isLogin ? 'دخول' : 'إنشاء حساب';
+  hideAuthError();
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideAuthError() {
+  document.getElementById('auth-error').style.display = 'none';
+}
+
+function authSubmit() {
+  const username = document.getElementById('auth-username').value.trim();
+  const password = document.getElementById('auth-password').value.trim();
+  if (!username || !password) { showAuthError('يرجى إدخال اسم المستخدم وكلمة المرور'); return; }
+  hideAuthError();
+  document.getElementById('auth-btn').textContent = '...جاري';
+  document.getElementById('auth-btn').disabled = true;
+  if (currentAuthMode === 'login') {
+    vscode.postMessage({ type: 'login', username, password });
+  } else {
+    vscode.postMessage({ type: 'register', username, password });
+  }
+}
+
+function showScreen(name) {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'none';
+  if (name === 'auth') document.getElementById('auth-screen').style.display = 'flex';
+  else if (name === 'setup') document.getElementById('setup-screen').style.display = 'flex';
+  else if (name === 'app') document.getElementById('app-screen').style.display = 'flex';
+}
+
+// ── Setup (API keys) ───────────────────────────────────────────────────────────
+
+function buildProviderList(providers) {
+  const list = document.getElementById('provider-list');
+  list.innerHTML = '';
+  if (!providers || providers.length === 0) {
+    list.innerHTML = '<div style="font-size:0.75rem;color:#94a3b8;">لا توجد مزودين مدعومين</div>';
+    return;
+  }
+  providers.forEach(p => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;flex-direction:column;gap:6px;background:rgba(99,102,241,0.05);padding:10px 12px;border-radius:10px;border:1px solid rgba(99,102,241,0.15);';
+    row.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.82rem;font-weight:600;color:var(--vscode-foreground,#e2e8f0);">${escHtml(p.name)}</span>
+        <span id="key-status-${p.id}" style="font-size:0.7rem;color:#64748b;"></span>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <input id="key-${p.id}" type="password" placeholder="${escHtml(p.key_hint || 'API Key...')}"
+          style="flex:1;padding:7px 10px;border-radius:7px;border:1px solid rgba(99,102,241,0.25);background:rgba(0,0,0,0.2);color:var(--vscode-foreground,#e2e8f0);font-size:0.78rem;outline:none;font-family:monospace;"
+          onkeydown="if(event.key==='Enter')addKey('${p.id}')"/>
+        <button onclick="addKey('${p.id}')"
+          style="padding:7px 12px;border-radius:7px;border:none;background:rgba(99,102,241,0.7);color:#fff;font-size:0.78rem;cursor:pointer;">
+          إضافة
+        </button>
+      </div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function addKey(providerId) {
+  const input = document.getElementById('key-' + providerId);
+  const key = input ? input.value.trim() : '';
+  if (!key) return;
+  document.getElementById('setup-error').style.display = 'none';
+  vscode.postMessage({ type: 'addProviderKey', provider: providerId, apiKey: key });
+}
+
+function finishSetup() {
+  showScreen('app');
+  vscode.postMessage({ type: 'ready' });
+}
+
+// ── App logic ─────────────────────────────────────────────────────────────────
+
+function setLoopRunning(running) {
+  loopRunning = running;
+  document.getElementById('stop-btn').style.visibility = running ? 'visible' : 'hidden';
+  document.getElementById('btn').disabled = running;
+}
+
+function stopLoop() { vscode.postMessage({ type: 'stopLoop' }); }
+
+function toggleLog() {
+  logVisible = !logVisible;
+  document.getElementById('log-entries').style.display = logVisible ? '' : 'none';
+  document.getElementById('log-arrow').textContent = logVisible ? '▾' : '▸';
+}
+
+function addToolEntry(name, status) {
+  const entries = document.getElementById('log-entries');
+  const row = document.createElement('div'); row.className = 'tool-entry';
+  const icon = status === 'pending' ? '▶' : status === 'error' ? '✕' : '✓';
+  row.innerHTML = `<span class="t-icon">${icon}</span><span class="t-name">${escHtml(name)}</span><span class="t-status ${status}">${status}</span>`;
+  entries.appendChild(row);
+  entries.scrollTop = 99999;
+}
+
+function sendApproval(approved) {
+  if (pendingCallId) {
+    vscode.postMessage({ type: 'approve', callId: pendingCallId, approved });
+    pendingCallId = null;
+  }
+  document.getElementById('overlay').style.display = 'none';
+}
+
+// ── Message handler ───────────────────────────────────────────────────────────
+
+window.addEventListener('message', ({data}) => {
+  switch(data.type) {
+
+    case 'authStatus':
+      // Reset auth button state
+      const btn = document.getElementById('auth-btn');
+      if (btn) { btn.disabled = false; btn.textContent = currentAuthMode === 'login' ? 'دخول' : 'إنشاء حساب'; }
+      if (data.loggedIn) {
+        showScreen('app');
+      } else {
+        showScreen('auth');
+      }
+      break;
+
+    case 'authSuccess':
+      if (data.isAdmin) {
+        // Show setup screen to add API keys
+        showScreen('setup');
+      } else {
+        showScreen('app');
+      }
+      break;
+
+    case 'authError': {
+      const b = document.getElementById('auth-btn');
+      if (b) { b.disabled = false; b.textContent = currentAuthMode === 'login' ? 'دخول' : 'إنشاء حساب'; }
+      showAuthError(data.message || 'خطأ في المصادقة');
+      break;
+    }
+
+    case 'supportedProviders':
+      buildProviderList(data.data || []);
+      break;
+
+    case 'keyAdded': {
+      const inp = document.getElementById('key-' + data.provider);
+      if (inp) { inp.value = ''; inp.style.borderColor = '#10b981'; }
+      const st = document.getElementById('key-status-' + data.provider);
+      if (st) { st.textContent = '✓ تمت الإضافة'; st.style.color = '#10b981'; }
+      const suc = document.getElementById('setup-success');
+      if (suc) { suc.textContent = `✓ تمت إضافة مفتاح ${data.provider} بنجاح`; suc.style.display = 'block'; }
+      break;
+    }
+
+    case 'keyError': {
+      const errEl = document.getElementById('setup-error');
+      if (errEl) { errEl.textContent = data.message; errEl.style.display = 'block'; }
+      break;
+    }
+
+    case 'providers': setProviders(data.data); break;
+
+    case 'requestEnd':
+      document.getElementById('btn').disabled = false;
+      sending = false;
+      break;
+
+    case 'renderChat':
+      renderChat(data.messages || [], !!data.thinking);
+      break;
+
+    case 'debugInject': showDebugBanner(data.text); break;
+
+    case 'agentModeChange':
+      agentMode = data.active;
+      document.getElementById('header-title').textContent = agentMode ? '🤖 Agent Mode' : 'KurdBox AI';
+      document.getElementById('agent-toolbar').style.display = agentMode ? 'flex' : 'none';
+      document.getElementById('tool-log').style.display = agentMode ? 'block' : 'none';
+      if (data.workspaceRoot) { document.getElementById('root-badge').textContent = data.workspaceRoot; }
+      break;
+
+    case 'stepUpdate':
+      document.getElementById('step-counter').textContent = 'Step ' + data.step + ' / ' + data.max;
+      document.getElementById('step-counter').style.visibility = 'visible';
+      setLoopRunning(true);
+      break;
+
+    case 'toolCallLog': addToolEntry(data.name, data.status); break;
+
+    case 'approvalRequest':
+      pendingCallId = data.callId;
+      document.getElementById('appr-badge').textContent = data.reqType;
+      document.getElementById('appr-badge').className = 'approval-badge badge-' + data.reqType;
+      document.getElementById('appr-path').textContent = data.path || data.command || '';
+      document.getElementById('appr-diff').textContent = data.diff || '';
+      document.getElementById('overlay').style.display = 'block';
+      break;
+
+    case 'finalAnswer':
+      setLoopRunning(false);
+      document.getElementById('step-counter').style.visibility = 'hidden';
+      if (data.text) renderChat([...(window._lastChatMessages || []), { role: 'assistant', text: data.text }], false);
+      break;
+
+    case 'taskSummary': {
+      const wrap = document.createElement('div'); wrap.className = 'task-summary';
+      wrap.innerHTML = `<div class="task-summary-header" onclick="this.nextSibling.classList.toggle('open')">📋 Task Summary <span>▾</span></div>
+        <div class="task-summary-body"><b>Iterations:</b> ${data.iterations}<br><b>Tools:</b> ${data.toolsUsed.join(', ') || '—'}<br><b>Files changed:</b> ${data.filesChanged.join(', ') || '—'}</div>`;
+      document.getElementById('msgs').appendChild(wrap);
+      break;
+    }
+
+    case 'loopStopped': setLoopRunning(false); renderChat([...(window._lastChatMessages || []), { role: 'error', text: '⏹ Agent stopped.' }], false); break;
+    case 'agentError': setLoopRunning(false); renderChat([...(window._lastChatMessages || []), { role: 'error', text: '⚠️ ' + data.message }], false); document.getElementById('btn').disabled = false; break;
+    case 'historyData': loadHistory(data.data); break;
+  }
+});
+
+// ── Send message ──────────────────────────────────────────────────────────────
+
+function send() {
+  const inp = document.getElementById('inp');
+  const text = inp.value.trim();
+  if (!text || document.getElementById('btn').disabled || sending) return;
+  sending = true;
+  if (typeof closeHistory === 'function') closeHistory();
+  inp.value = '';
+  autoResize(inp);
+  document.getElementById('btn').disabled = true;
+  document.getElementById('btn').blur();
+  vscode.postMessage({ type: 'send', text, provider: getProvider(), model: getModel(text), stream: getStream() });
+}
+
+function showDebugBanner(errorText) {
+  pendingDebug = errorText;
+  document.getElementById('debug-preview').textContent = '🐛 ' + errorText.slice(0, 90) + (errorText.length > 90 ? '…' : '');
+  document.getElementById('debug-banner').style.display = 'flex';
+}
+
+function sendDebug() { if (!pendingDebug) return; dismissDebug(); vscode.postMessage({ type: 'debug', text: pendingDebug }); }
+function dismissDebug() { pendingDebug = ''; document.getElementById('debug-banner').style.display = 'none'; }
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+// Start with no screen visible, wait for authStatus message
+vscode.postMessage({ type: 'ready' });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KURDOST v4.0 — AI Gateway</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#080d1a;--surface:#0f1629;--surface2:#161f36;--surface3:#1c2840;
+  --border:rgba(99,102,241,.15);--border2:rgba(99,102,241,.25);
+  --text:#e2e8f0;--muted:#64748b;--muted2:#94a3b8;
+  --accent:#6366f1;--accent2:#8b5cf6;--accent3:#a78bfa;
+  --green:#10b981;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6;--cyan:#06b6d4;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl}
+
+/* ── Sidebar ── */
+.sidebar{position:fixed;top:0;right:0;width:230px;height:100vh;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;padding:1.4rem 1rem;z-index:100;overflow-y:auto}
+.logo{display:flex;align-items:center;gap:.7rem;margin-bottom:2rem;padding:.4rem}
+.logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 0 20px rgba(99,102,241,.4)}
+.logo-name{font-size:1.15rem;font-weight:800;color:#fff}
+.logo-ver{font-size:.65rem;color:var(--accent3);font-weight:700;letter-spacing:.05em}
+nav{display:flex;flex-direction:column;gap:.2rem;flex:1}
+.nav-section{font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;padding:.6rem .7rem .3rem;margin-top:.5rem}
+.nav-item{display:flex;align-items:center;gap:.65rem;padding:.55rem .8rem;border-radius:9px;cursor:pointer;font-size:.84rem;color:var(--muted2);transition:all .15s;border:none;background:none;width:100%;text-align:right}
+.nav-item:hover{background:rgba(99,102,241,.1);color:var(--text)}
+.nav-item.active{background:rgba(99,102,241,.18);color:#a5b4fc;font-weight:600}
+.nav-icon{font-size:.95rem;flex-shrink:0;width:18px;text-align:center}
+.sidebar-footer{border-top:1px solid var(--border);padding-top:1rem;margin-top:.5rem}
+.sys-status{display:flex;align-items:center;gap:.5rem;font-size:.72rem;color:var(--muted)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── Main ── */
+.main{margin-right:230px;padding:1.8rem;min-height:100vh}
+.page{display:none}
+.page.active{display:block}
+
+/* ── Page Header ── */
+.ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.6rem;gap:1rem}
+.ph-left h1{font-size:1.3rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:.5rem}
+.ph-left p{font-size:.78rem;color:var(--muted);margin-top:.2rem}
+.ph-actions{display:flex;gap:.5rem;align-items:center;flex-shrink:0}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.35rem}
+.card-title{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin-bottom:.9rem}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem}
+
+/* ── Stats ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:.8rem;margin-bottom:1.6rem}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.1rem;position:relative;overflow:hidden;transition:border-color .2s}
+.stat:hover{border-color:var(--border2)}
+.stat::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(99,102,241,.04),transparent);pointer-events:none}
+.stat-icon{font-size:1.3rem;margin-bottom:.5rem}
+.stat-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.35rem}
+.stat-value{font-size:1.65rem;font-weight:800;color:#fff;line-height:1}
+.stat-sub{font-size:.68rem;color:var(--muted);margin-top:.3rem}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:.4rem;padding:.48rem .95rem;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#4f46e5;box-shadow:0 0 16px rgba(99,102,241,.4)}
+.btn-sm{padding:.33rem .65rem;font-size:.73rem;border-radius:7px}
+.btn-ghost{background:transparent;color:var(--muted2);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.btn-danger{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-danger:hover{background:rgba(239,68,68,.22)}
+.btn-success{background:rgba(16,185,129,.12);color:var(--green);border:1px solid rgba(16,185,129,.2)}
+.btn-success:hover{background:rgba(16,185,129,.22)}
+.btn-yellow{background:rgba(245,158,11,.12);color:var(--yellow);border:1px solid rgba(245,158,11,.2)}
+.btn-yellow:hover{background:rgba(245,158,11,.22)}
+
+/* ── Form ── */
+.field{display:flex;flex-direction:column;gap:.38rem}
+.field label{font-size:.72rem;color:var(--muted2);font-weight:600}
+input,select,textarea{background:rgba(15,23,42,.95);border:1px solid rgba(148,163,184,.15);border-radius:8px;color:var(--text);padding:.55rem .8rem;font-size:.85rem;outline:none;transition:border-color .2s;width:100%;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+select option{background:#1e293b}
+input[type=range]{padding:0;height:4px;accent-color:var(--accent)}
+
+/* ── Badge / Status ── */
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.18rem .55rem;border-radius:20px;font-size:.68rem;font-weight:700}
+.badge.active{background:rgba(16,185,129,.15);color:var(--green)}
+.badge.cooldown{background:rgba(245,158,11,.15);color:var(--yellow)}
+.badge.limited{background:rgba(59,130,246,.15);color:var(--blue)}
+.badge.inactive{background:rgba(100,116,139,.15);color:var(--muted)}
+.badge.degraded{background:rgba(245,158,11,.15);color:var(--yellow)}
+.badge.disabled{background:rgba(239,68,68,.15);color:var(--red)}
+
+/* ── Charts ── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.6rem}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.35rem}
+.chart-card canvas{max-height:190px}
+
+/* ── Rankings Table ── */
+.rank-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.rank-table th{color:var(--muted);font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:.55rem .75rem;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+.rank-table td{padding:.65rem .75rem;border-bottom:1px solid rgba(99,102,241,.05);vertical-align:middle}
+.rank-table tr:last-child td{border:none}
+.rank-table tr:hover td{background:rgba(99,102,241,.04)}
+.rank-num{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem}
+.rank-1{background:rgba(245,158,11,.2);color:var(--yellow)}
+.rank-2{background:rgba(148,163,184,.15);color:var(--muted2)}
+.rank-3{background:rgba(180,120,80,.15);color:#cd7f32}
+.rank-n{background:rgba(99,102,241,.1);color:var(--accent3)}
+.score-bar-wrap{width:80px;height:6px;background:rgba(99,102,241,.15);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:.4rem}
+.score-bar{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+
+/* ── Provider Cards ── */
+.provider-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:1rem;margin-top:1rem}
+.provider-card{background:var(--surface2);border:1px solid var(--border);border-radius:13px;padding:1.2rem;transition:border-color .18s}
+.provider-card:hover{border-color:var(--border2)}
+.p-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.9rem}
+.p-name{font-weight:700;font-size:.93rem;color:#fff}
+.p-id{font-size:.68rem;color:var(--muted);margin-top:.1rem;font-family:monospace}
+.p-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.55rem;margin:.75rem 0}
+.ps{text-align:center;background:rgba(99,102,241,.05);border-radius:8px;padding:.5rem .3rem}
+.ps-v{font-size:.95rem;font-weight:700;color:#fff}
+.ps-l{font-size:.6rem;color:var(--muted);margin-top:.1rem}
+.pool-section{background:rgba(99,102,241,.07);border:1px dashed rgba(99,102,241,.25);border-radius:9px;padding:.6rem .8rem;margin:.6rem 0;cursor:pointer;transition:background .18s}
+.pool-section:hover{background:rgba(99,102,241,.14)}
+.pool-header{display:flex;align-items:center;justify-content:space-between;font-size:.75rem;color:#a5b4fc;font-weight:600}
+.key-health-dots{display:flex;gap:.3rem;margin-top:.35rem;flex-wrap:wrap}
+.kd{width:10px;height:10px;border-radius:50%;cursor:default}
+.kd.active{background:var(--green)}
+.kd.degraded{background:var(--yellow)}
+.kd.disabled{background:var(--red)}
+.p-actions{display:flex;gap:.45rem;margin-top:.8rem;flex-wrap:wrap}
+.discover-btn{display:flex;align-items:center;gap:.4rem;font-size:.72rem;color:var(--cyan);background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.2);border-radius:7px;padding:.3rem .6rem;cursor:pointer;transition:background .15s}
+.discover-btn:hover{background:rgba(6,182,212,.2)}
+
+/* ── Add Provider ── */
+.add-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.35rem;margin-bottom:1.6rem}
+.detect-banner{display:none;align-items:center;gap:.6rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:.45rem .85rem;margin-bottom:.8rem;font-size:.8rem}
+.detect-banner.visible{display:flex}
+.detect-banner strong{color:var(--green)}
+.detect-change{margin-right:auto;color:var(--muted);cursor:pointer;font-size:.72rem}
+.form-row{display:flex;gap:.7rem;flex-wrap:wrap;align-items:flex-end}
+.form-row .field{flex:1;min-width:140px}
+
+/* ── Chat ── */
+.chat-layout{display:grid;grid-template-columns:260px 1fr;gap:1rem;height:calc(100vh - 5rem)}
+.chat-sidebar-panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.1rem;display:flex;flex-direction:column;gap:.8rem;overflow-y:auto}
+.chat-main{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.chat-messages{flex:1;overflow-y:auto;padding:1.3rem;display:flex;flex-direction:column;gap:.85rem}
+.msg{max-width:76%;padding:.75rem 1rem;border-radius:12px;font-size:.86rem;line-height:1.6;white-space:pre-wrap}
+.msg-user{background:rgba(99,102,241,.18);border:1px solid rgba(99,102,241,.22);margin-right:auto;border-radius:12px 12px 4px 12px}
+.msg-assistant{background:var(--surface2);border:1px solid var(--border);margin-left:auto;border-radius:12px 12px 12px 4px}
+.msg-system{background:rgba(6,182,212,.07);border:1px solid rgba(6,182,212,.18);text-align:center;width:100%;max-width:100%;font-size:.73rem;color:var(--cyan);border-radius:9px;padding:.55rem}
+.msg-meta{font-size:.63rem;color:var(--muted);margin-top:.35rem;display:flex;gap:.6rem;flex-wrap:wrap}
+.msg-meta span{background:rgba(99,102,241,.1);padding:.1rem .4rem;border-radius:4px}
+.chat-input-area{border-top:1px solid var(--border);padding:.9rem 1.1rem;display:flex;gap:.65rem;align-items:flex-end}
+.chat-input-area textarea{resize:none;min-height:42px;max-height:110px;border-radius:10px;font-family:inherit;line-height:1.5}
+.typing-ind{display:none;align-items:center;gap:.45rem;color:var(--muted);font-size:.77rem;padding:.25rem .9rem}
+.typing-ind.visible{display:flex}
+.tdots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent);animation:bounce .8s infinite}
+.tdots span:nth-child(2){animation-delay:.15s}
+.tdots span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+
+/* ── Budget ── */
+.budget-bar-wrap{width:100%;height:10px;background:rgba(99,102,241,.12);border-radius:5px;overflow:hidden;margin:.5rem 0}
+.budget-bar{height:100%;border-radius:5px;transition:width .4s;background:linear-gradient(90deg,var(--green),var(--yellow))}
+.budget-bar.tight{background:linear-gradient(90deg,var(--yellow),var(--red))}
+.budget-bar.exceeded{background:var(--red)}
+
+/* ── History ── */
+.table-wrap{overflow-x:auto}
+table.htable{width:100%;border-collapse:collapse;font-size:.8rem}
+table.htable th{color:var(--muted);font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:.55rem .7rem;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+table.htable td{padding:.6rem .7rem;border-bottom:1px solid rgba(99,102,241,.05);vertical-align:middle}
+table.htable tr:last-child td{border:none}
+table.htable tr:hover td{background:rgba(99,102,241,.03)}
+.pill{display:inline-block;padding:.13rem .5rem;border-radius:20px;font-size:.65rem;font-weight:700}
+.pill-ok{background:rgba(16,185,129,.15);color:var(--green)}
+.pill-fail{background:rgba(239,68,68,.15);color:var(--red)}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:1.7rem;width:520px;max-width:95vw;max-height:88vh;overflow-y:auto}
+.modal-title{font-size:1rem;font-weight:700;color:#fff;margin-bottom:1.2rem;display:flex;align-items:center;justify-content:space-between}
+.key-item{display:flex;align-items:center;justify-content:space-between;padding:.6rem .8rem;background:var(--surface2);border:1px solid var(--border);border-radius:9px;margin-bottom:.45rem}
+.key-left{flex:1;min-width:0}
+.key-preview{font-family:monospace;color:#a5b4fc;font-size:.8rem}
+.key-meta{color:var(--muted);font-size:.67rem;margin-top:.1rem}
+.key-right{display:flex;align-items:center;gap:.4rem;flex-shrink:0}
+.weight-input{width:56px;text-align:center;font-size:.78rem;padding:.28rem .4rem}
+
+/* ── Aliases ── */
+.alias-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.7rem;margin-top:.5rem}
+.alias-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.85rem;transition:border-color .18s;cursor:default}
+.alias-card:hover{border-color:var(--border2)}
+.alias-name{font-family:monospace;font-size:.9rem;color:#a5b4fc;font-weight:700}
+.alias-desc{font-size:.72rem;color:var(--muted);margin:.3rem 0 .5rem}
+.alias-models{font-size:.65rem;color:var(--muted2);line-height:1.5;max-height:55px;overflow:hidden}
+
+/* ── Continue ── */
+pre.code-block{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:1rem;font-size:.77rem;color:var(--text);overflow-x:auto;line-height:1.55;white-space:pre}
+.endpoint-row{display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem}
+.method-pill{padding:.15rem .5rem;border-radius:5px;font-size:.68rem;font-weight:700}
+.method-GET{background:rgba(59,130,246,.2);color:var(--blue)}
+.method-POST{background:rgba(16,185,129,.2);color:var(--green)}
+.endpoint-path{font-family:monospace;font-size:.78rem;color:#a5b4fc}
+
+/* ── Toast ── */
+.toast-container{position:fixed;bottom:1.5rem;left:1.5rem;z-index:999;display:flex;flex-direction:column;gap:.45rem}
+.toast{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.7rem 1rem;font-size:.8rem;min-width:230px;animation:slideIn .2s ease;display:flex;align-items:center;gap:.55rem;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast.success{border-color:rgba(16,185,129,.35);color:var(--green)}
+.toast.error{border-color:rgba(239,68,68,.35);color:var(--red)}
+.toast.info{border-color:rgba(99,102,241,.35);color:var(--accent3)}
+@keyframes slideIn{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(99,102,241,.3);border-radius:3px}
+
+@media(max-width:768px){.sidebar{display:none}.main{margin-right:0}.charts-row,.grid-2{grid-template-columns:1fr}.chat-layout{grid-template-columns:1fr}.chat-sidebar-panel{display:none}}
+</style>
+</head>
+<body>
+
+<!-- ══ Sidebar ══ -->
+<div class="sidebar">
+  <div class="logo">
+    <div class="logo-icon">K</div>
+    <div><div class="logo-name">KURDOST</div><div class="logo-ver">v4.0 — AI GATEWAY</div></div>
+  </div>
+  <nav>
+    <div class="nav-section">المراقبة</div>
+    <button class="nav-item active" onclick="showPage('overview',this)"><span class="nav-icon">📊</span> نظرة عامة</button>
+    <button class="nav-item" onclick="showPage('rankings',this)"><span class="nav-icon">🏆</span> تصنيف المزودين</button>
+    <div class="nav-section">الإدارة</div>
+    <button class="nav-item" onclick="showPage('providers',this)"><span class="nav-icon">🔌</span> المزودون</button>
+    <button class="nav-item" onclick="showPage('aliases',this)"><span class="nav-icon">🎯</span> النماذج الذكية</button>
+    <button class="nav-item" onclick="showPage('budget',this)"><span class="nav-icon">💰</span> مدير الميزانية</button>
+    <div class="nav-section">الاستخدام</div>
+    <button class="nav-item" onclick="showPage('chat',this)"><span class="nav-icon">💬</span> Chat Playground</button>
+    <button class="nav-item" onclick="showPage('history',this)"><span class="nav-icon">📜</span> السجل</button>
+    <button class="nav-item" onclick="showPage('economy',this)"><span class="nav-icon">💡</span> التوفير</button>
+    <button class="nav-item" onclick="showPage('continue',this)"><span class="nav-icon">🧩</span> Continue Integration</button>
+    <button class="nav-item" onclick="showPage('integration',this)"><span class="nav-icon">🔗</span> التكامل</button>
+    <button class="nav-item" onclick="window.open('/docs','_blank')"><span class="nav-icon">📖</span> API Docs</button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sys-status"><span class="dot"></span> <span id="sys-status-text">النظام يعمل</span></div>
+    <div style="font-size:.67rem;color:var(--muted);margin-top:.3rem" id="sys-version">KURDOST v4.0.0</div>
+  </div>
+</div>
+
+<!-- ══ Main ══ -->
+<div class="main">
+
+<!-- ─── OVERVIEW ─── -->
+<div id="page-overview" class="page active">
+  <div class="ph">
+    <div class="ph-left"><h1>📊 نظرة عامة</h1><p>مراقبة فورية — يتحدث كل 15 ثانية</p></div>
+    <div class="ph-actions"><button class="btn btn-ghost btn-sm" onclick="loadStats()">🔄 تحديث</button></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-icon">📡</div><div class="stat-label">إجمالي الطلبات</div><div class="stat-value" id="s-total">—</div><div class="stat-sub" id="s-failed">—</div></div>
+    <div class="stat"><div class="stat-icon">✅</div><div class="stat-label">نسبة النجاح</div><div class="stat-value" id="s-rate">—</div></div>
+    <div class="stat"><div class="stat-icon">⚡</div><div class="stat-label">متوسط التأخير</div><div class="stat-value" id="s-lat">—</div></div>
+    <div class="stat"><div class="stat-icon">🪙</div><div class="stat-label">إجمالي التوكنز</div><div class="stat-value" id="s-tokens">—</div></div>
+    <div class="stat"><div class="stat-icon">💵</div><div class="stat-label">التكلفة التقديرية</div><div class="stat-value" id="s-cost">—</div><div class="stat-sub" id="s-budget-sub">—</div></div>
+    <div class="stat"><div class="stat-icon">🟢</div><div class="stat-label">مزودون نشطون</div><div class="stat-value" id="s-active">—</div></div>
+  </div>
+
+  <!-- Budget Bar -->
+  <div id="budget-overview-card" style="display:none" class="card" style="margin-bottom:1.6rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+      <div class="card-title" style="margin:0">💰 الميزانية اليومية</div>
+      <span id="budget-pct-label" style="font-size:.78rem;font-weight:700;color:var(--green)"></span>
+    </div>
+    <div class="budget-bar-wrap"><div class="budget-bar" id="budget-bar" style="width:0%"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:.3rem">
+      <span id="budget-spent-label">$0</span><span id="budget-limit-label">$0</span>
+    </div>
+  </div>
+  <div style="margin-bottom:1.6rem"></div>
+
+  <div class="charts-row">
+    <div class="chart-card"><div class="card-title">الطلبات الأخيرة</div><canvas id="chartRequests"></canvas></div>
+    <div class="chart-card"><div class="card-title">التأخير (ms)</div><canvas id="chartLatency"></canvas></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">حالة المزودين الفورية</div>
+    <div id="mini-providers" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem;margin-top:.5rem"></div>
+  </div>
+</div>
+
+<!-- ─── RANKINGS ─── -->
+<div id="page-rankings" class="page">
+  <div class="ph">
+    <div class="ph-left"><h1>🏆 تصنيف المزودين</h1><p>مرتبون حسب الأداء الحقيقي</p></div>
+    <div class="ph-actions"><button class="btn btn-ghost btn-sm" onclick="loadRankings()">🔄 تحديث</button></div>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table class="rank-table" id="rankings-table">
+        <thead><tr>
+          <th>#</th><th>المزود</th><th>الحالة</th><th>نسبة النجاح</th><th>التأخير</th><th>الطلبات</th><th>Pool</th><th>التكلفة</th><th>النقاط</th>
+        </tr></thead>
+        <tbody id="rankings-body">
+          <tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">جارٍ التحميل...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── PROVIDERS ─── -->
+<div id="page-providers" class="page">
+  <div class="ph">
+    <div class="ph-left"><h1>🔌 المزودون</h1><p>إضافة وإدارة مفاتيح API + Pool المفاتيح</p></div>
+    <div class="ph-actions"><button class="btn btn-ghost btn-sm" onclick="loadProviders()">🔄 تحديث</button></div>
+  </div>
+
+  <div class="add-card">
+    <div class="card-title">إضافة مزود جديد</div>
+    <div id="detect-banner" class="detect-banner">
+      🔍 تم اكتشاف: <strong id="detected-name"></strong>
+      <span class="detect-change" onclick="clearDetect()">تغيير</span>
+    </div>
+    <form onsubmit="return false" class="form-row">
+      <input type="text" name="username" autocomplete="username" style="display:none" aria-hidden="true">
+      <div class="field"><label>نوع المزود</label><select id="add-type"><option value="auto">🔍 اكتشاف تلقائي</option></select></div>
+      <div class="field" style="flex:2"><label>مفتاح API</label><input id="add-key" type="password" autocomplete="new-password" placeholder="الصق مفتاحك هنا..." oninput="detectFromKey()"></div>
+      <button type="button" class="btn btn-primary" onclick="addProvider()">➕ إضافة</button>
+    </form>
+  </div>
+
+  <div id="providers-list" class="provider-grid"></div>
+</div>
+
+<!-- ─── ALIASES ─── -->
+<div id="page-aliases" class="page">
+  <div class="ph">
+    <div class="ph-left"><h1>🎯 النماذج الذكية</h1><p>أرسل "best-70b" بدلاً من اسم نموذج محدد</p></div>
+  </div>
+  <div class="card" style="margin-bottom:1.2rem">
+    <div class="card-title">كيفية الاستخدام</div>
+    <p style="font-size:.83rem;color:var(--muted2);line-height:1.7;margin-bottom:.7rem">
+      بدلاً من كتابة اسم نموذج محدد مثل <code style="color:#a5b4fc;background:rgba(99,102,241,.1);padding:.1rem .4rem;border-radius:4px">llama-3.3-70b-versatile</code>،
+      يمكنك استخدام اسم ذكي وسيجد KURDOST أفضل مزود متاح تلقائياً.
+    </p>
+    <pre class="code-block">{"model": "best-70b", "messages": [...]}</pre>
+  </div>
+  <div id="aliases-grid" class="alias-grid"></div>
+</div>
+
+<!-- ─── BUDGET ─── -->
+<div id="page-budget" class="page">
+  <div class="ph">
+    <div class="ph-left"><h1>💰 مدير الميزانية</h1><p>تحكم في الإنفاق اليومي تلقائياً</p></div>
+  </div>
+  <div class="grid-2" style="margin-bottom:1.2rem">
+    <div class="card">
+      <div class="card-title">الميزانية الحالية</div>
+      <div id="budget-details" style="font-size:.85rem;line-height:2;color:var(--muted2)">جارٍ التحميل...</div>
+      <div class="budget-bar-wrap" style="margin:.8rem 0"><div class="budget-bar" id="budget-bar2" style="width:0%"></div></div>
+      <div style="display:flex;gap:.5rem;margin-top:.8rem">
+        <button class="btn btn-danger btn-sm" onclick="resetBudget()">↺ إعادة تعيين الإنفاق</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">ضبط الميزانية</div>
+      <div style="display:flex;flex-direction:column;gap:.8rem">
+        <div class="field"><label>الحد اليومي (بالدولار) — 0 = بلا حد</label><input id="budget-limit" type="number" step="0.01" min="0" placeholder="مثلاً: 2.00"></div>
+        <div class="field">
+          <label>عتبة التحويل لنماذج أرخص: <span id="thresh-val">90</span>%</label>
+          <input type="range" min="50" max="99" value="90" id="budget-thresh" oninput="document.getElementById('thresh-val').textContent=this.value">
+        </div>
+        <p style="font-size:.73rem;color:var(--muted);line-height:1.5">عند الوصول للعتبة، يتحول النظام تلقائياً لاستخدام النماذج الأرخص بدلاً من النماذج الكبيرة.</p>
+        <button class="btn btn-primary" onclick="saveBudget()">💾 حفظ</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">كيف يعمل</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-top:.5rem">
+      <div style="text-align:center;padding:.8rem">
+        <div style="font-size:2rem;margin-bottom:.4rem">💵</div>
+        <div style="font-weight:700;font-size:.85rem;color:#fff;margin-bottom:.3rem">حدد الميزانية</div>
+        <div style="font-size:.73rem;color:var(--muted)">مثلاً: $2 يومياً</div>
+      </div>
+      <div style="text-align:center;padding:.8rem">
+        <div style="font-size:2rem;margin-bottom:.4rem">📊</div>
+        <div style="font-weight:700;font-size:.85rem;color:#fff;margin-bottom:.3rem">KURDOST يتابع</div>
+        <div style="font-size:.73rem;color:var(--muted)">يحسب كل طلب تلقائياً</div>
+      </div>
+      <div style="text-align:center;padding:.8rem">
+        <div style="font-size:2rem;margin-bottom:.4rem">⚡</div>
+        <div style="font-weight:700;font-size:.85rem;color:#fff;margin-bottom:.3rem">تحويل ذكي</div>
+        <div style="font-size:.73rem;color:var(--muted)">عند 90%: يستخدم نماذج أرخص</div>
+      </div>
+      <div style="text-align:center;padding:.8rem">
+        <div style="font-size:2rem;margin-bottom:.4rem">🔄</div>
+        <div style="font-weight:700;font-size:.85rem;color:#fff;margin-bottom:.3rem">إعادة تعيين يومية</div>
+        <div style="font-size:.73rem;color:var(--muted)">يصفر الحساب كل منتصف ليل</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CHAT ─── -->
+<div id="page-chat" class="page">
+  <div class="ph">
+    <div class="ph-left"><h1>💬 Chat Playground</h1><p>اختبر الـ Smart Routing مباشرة</p></div>
+    <div class="ph-actions"><button class="btn btn-ghost btn-sm" onclick="clearChat()">🗑 مسح</button></div>
+  </div>
+  <div class="chat-layout">
+    <div class="chat-sidebar-panel">
+      <div class="field"><label>المزود</label><select id="chat-hint" onchange="onProviderChange()"><option value="">— Auto (Smart Routing) —</option></select></div>
+      <div class="field"><label>النموذج</label><select id="chat-model"></select></div>
+      <div class="field"><label>استراتيجية</label><select id="chat-strategy"><option value="smart">🧠 Smart</option><option value="priority">⚡ Priority</option><option value="lowest_latency">🚀 Lowest Latency</option><option value="round_robin">🔄 Round Robin</option></select></div>
+      <div class="field"><label>الحرارة: <span id="temp-v">0.7</span></label><input type="range" min="0" max="2" step="0.1" value="0.7" id="chat-temp" oninput="document.getElementById('temp-v').textContent=this.value"></div>
+      <div class="field"><label>أقصى توكنز</label><input id="chat-maxt" type="number" value="1024" min="64" max="8192"></div>
+      <div style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:var(--muted)"><input type="checkbox" id="chat-stream" style="width:auto"><label for="chat-stream">Streaming</label></div>
+      <div id="chat-info" style="border-top:1px solid var(--border);padding-top:.8rem;font-size:.73rem;color:var(--muted);display:none;line-height:1.9">
+        <div>مزود: <span id="ci-p" style="color:#a5b4fc;font-weight:600"></span></div>
+        <div>تأخير: <span id="ci-l" style="color:var(--green)"></span></div>
+        <div>توكنز: <span id="ci-t" style="color:var(--text)"></span></div>
+        <div>تكلفة: <span id="ci-c" style="color:var(--yellow)"></span></div>
+      </div>
+    </div>
+    <div class="chat-main">
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg msg-system">مرحباً! اكتب رسالتك واختبر التوجيه الذكي. جرّب "best-70b" كنموذج!</div>
+      </div>
+      <div class="typing-ind" id="typing-ind"><div class="tdots"><span></span><span></span><span></span></div><span id="typing-txt">جارٍ الاتصال...</span></div>
+      <div class="chat-input-area">
+        <textarea id="chat-input" placeholder="اكتب هنا... (Enter للإرسال، Shift+Enter لسطر جديد)" rows="2" onkeydown="chatKey(event)"></textarea>
+        <button class="btn btn-primary" id="send-btn" onclick="sendChat()">إرسال ↵</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── HISTORY ─── -->
+<div id="page-history" class="page">
+  <div class="ph">
+    <div class="ph-left"><h1>📜 السجل</h1><p>آخر الطلبات من قاعدة البيانات</p></div>
+    <div class="ph-actions"><button class="btn btn-ghost btn-sm" onclick="loadHistory()">🔄 تحديث</button></div>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table class="htable">
+        <thead><tr><th>المزود</th><th>النموذج</th><th>التأخير</th><th>التوكنز</th><th>التكلفة</th><th>الحالة</th><th>الوقت</th></tr></thead>
+        <tbody id="history-body"><tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">جارٍ التحميل...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─── CONTINUE ─── -->
+<div id="page-continue" class="page">
+  <div class="ph">
+    <div class="ph-left"><h1>🧩 Continue Integration</h1><p>استخدم KURDOST مع VS Code Continue Extension</p></div>
+    <div class="ph-actions"><button class="btn btn-ghost btn-sm" onclick="loadContinueConfig()">🔄 تحديث</button></div>
+  </div>
+  <div class="grid-2" style="margin-bottom:1.2rem">
+    <div class="card">
+      <div class="card-title">الإعداد الفوري</div>
+      <p style="font-size:.82rem;color:var(--muted2);line-height:1.7;margin-bottom:1rem">
+        KURDOST يولّد ملف إعداد Continue تلقائياً مع أفضل مزود ونموذج متاح الآن.
+        كل ما تحتاجه هو نسخ الـ JSON أدناه إلى ملف <code style="color:#a5b4fc">~/.continue/config.json</code>.
+      </p>
+      <div class="card-title">Config JSON</div>
+      <pre class="code-block" id="continue-json" style="max-height:280px;overflow-y:auto">جارٍ التحميل...</pre>
+      <button class="btn btn-primary btn-sm" style="margin-top:.7rem" onclick="copyContinueConfig()">📋 نسخ الإعداد</button>
+    </div>
+    <div class="card">
+      <div class="card-title">خطوات الإعداد</div>
+      <div style="display:flex;flex-direction:column;gap:.8rem">
+        <div style="display:flex;gap:.8rem;align-items:flex-start">
+          <div style="width:26px;height:26px;border-radius:50%;background:rgba(99,102,241,.2);color:#a5b4fc;font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+          <div><div style="font-size:.83rem;font-weight:600;color:#fff;margin-bottom:.2rem">ثبّت Continue في VS Code</div><div style="font-size:.73rem;color:var(--muted)">Extensions → ابحث عن "Continue"</div></div>
+        </div>
+        <div style="display:flex;gap:.8rem;align-items:flex-start">
+          <div style="width:26px;height:26px;border-radius:50%;background:rgba(99,102,241,.2);color:#a5b4fc;font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+          <div><div style="font-size:.83rem;font-weight:600;color:#fff;margin-bottom:.2rem">افتح ملف الإعداد</div><code style="font-size:.73rem;color:var(--muted)">~/.continue/config.json</code></div>
+        </div>
+        <div style="display:flex;gap:.8rem;align-items:flex-start">
+          <div style="width:26px;height:26px;border-radius:50%;background:rgba(99,102,241,.2);color:#a5b4fc;font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+          <div><div style="font-size:.83rem;font-weight:600;color:#fff;margin-bottom:.2rem">الصق الإعداد أدناه</div><div style="font-size:.73rem;color:var(--muted)">انسخ الـ JSON من اليسار وألصقه كاملاً</div></div>
+        </div>
+        <div style="display:flex;gap:.8rem;align-items:flex-start">
+          <div style="width:26px;height:26px;border-radius:50%;background:rgba(16,185,129,.2);color:var(--green);font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">✓</div>
+          <div><div style="font-size:.83rem;font-weight:600;color:var(--green);margin-bottom:.2rem">جاهز!</div><div style="font-size:.73rem;color:var(--muted)">Continue سيستخدم KURDOST تلقائياً مع أفضل مزود</div></div>
+        </div>
+      </div>
+      <div style="margin-top:1.2rem;border-top:1px solid var(--border);padding-top:1rem">
+        <div class="card-title">نقاط الـ API</div>
+        <div class="endpoint-row"><span class="method-pill method-GET">GET</span><span class="endpoint-path">/api/v1/continue/config</span></div>
+        <div class="endpoint-row"><span class="method-pill method-GET">GET</span><span class="endpoint-path">/api/v1/continue/config.yaml</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ─── INTEGRATION ─── -->
+<div id="page-integration" class="page">
+  <div class="ph">
+    <div class="ph-left"><h1>🔗 التكامل التلقائي</h1><p>ربط Cline و Continue بـ KURDOST بنقرة واحدة</p></div>
+    <div class="ph-actions">
+      <button class="btn btn-ghost btn-sm" onclick="loadIntegrations()">🔄 تحديث</button>
+    </div>
+  </div>
+
+  <!-- حالة الأدوات -->
+  <div class="grid-3" style="margin-bottom:1.4rem">
+    <div class="card" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem">🤖</div>
+      <div style="font-weight:700;color:#fff;margin-bottom:.3rem">Cline</div>
+      <div id="int-cline-status" class="badge inactive" style="margin:0 auto">جارٍ الفحص...</div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:.5rem">VS Code Extension</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem">🧩</div>
+      <div style="font-weight:700;color:#fff;margin-bottom:.3rem">Continue</div>
+      <div id="int-continue-status" class="badge inactive" style="margin:0 auto">جارٍ الفحص...</div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:.5rem">VS Code Extension</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem">🔳</div>
+      <div style="font-weight:700;color:#fff;margin-bottom:.3rem">OpenAI Compatible</div>
+      <div id="int-openai-status" class="badge active" style="margin:0 auto">متاح دائماً</div>
+      <div style="font-size:.7rem;color:var(--muted);margin-top:.5rem">Any OpenAI SDK</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:1.4rem">
+    <!-- Cline Config -->
+    <div class="card">
+      <div class="card-title">🤖 إعداد Cline</div>
+      <p style="font-size:.78rem;color:var(--muted2);margin-bottom:.8rem;line-height:1.6">
+        انسخ هذه الإعدادات وأضفها لـ VS Code → Settings (JSON) تحت مفتاح <code style="color:#a5b4fc">cline</code>.
+      </p>
+      <pre class="code-block" id="int-cline-json" style="max-height:220px;overflow-y:auto;font-size:.72rem">جارٍ التحميل...</pre>
+      <div style="display:flex;gap:.5rem;margin-top:.7rem;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="copyClineConfig()">📋 نسخ إعدادات Cline</button>
+        <a id="int-cline-dl" class="btn btn-ghost btn-sm" download="cline-kurdost.json">⬇ تحميل JSON</a>
+      </div>
+    </div>
+
+    <!-- Continue Config -->
+    <div class="card">
+      <div class="card-title">🧩 إعداد Continue</div>
+      <p style="font-size:.78rem;color:var(--muted2);margin-bottom:.8rem;line-height:1.6">
+        انسخ هذا JSON إلى <code style="color:#a5b4fc">~/.continue/config.json</code> أو حمّله مباشرة.
+      </p>
+      <pre class="code-block" id="int-continue-json" style="max-height:220px;overflow-y:auto;font-size:.72rem">جارٍ التحميل...</pre>
+      <div style="display:flex;gap:.5rem;margin-top:.7rem;flex-wrap:wrap">
+        <button class="btn btn-primary btn-sm" onclick="copyContinueIntConfig()">📋 نسخ إعدادات Continue</button>
+        <a id="int-continue-dl" class="btn btn-ghost btn-sm" download="config.json">⬇ تحميل config.json</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- OpenAI Compatible -->
+  <div class="card" style="margin-bottom:1.4rem">
+    <div class="card-title">🔳 OpenAI Compatible — أي SDK أو أداة</div>
+    <div class="grid-2">
+      <div>
+        <p style="font-size:.79rem;color:var(--muted2);margin-bottom:.8rem;line-height:1.65">
+          أي أداة تدعم OpenAI API يمكنها الاتصال بـ KURDOST مباشرة. استخدم هذه البيانات:
+        </p>
+        <div style="display:flex;flex-direction:column;gap:.5rem">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;font-family:monospace;font-size:.78rem">
+            <span style="color:var(--muted);font-size:.65rem;display:block;margin-bottom:.2rem">BASE URL</span>
+            <span id="int-openai-url" style="color:#a5b4fc">—</span>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.6rem .9rem;font-family:monospace;font-size:.78rem">
+            <span style="color:var(--muted);font-size:.65rem;display:block;margin-bottom:.2rem">API KEY</span>
+            <span style="color:var(--green)">kurdost-proxy</span>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:.7rem" onclick="copyOpenAIUrl()">📋 نسخ Base URL</button>
+      </div>
+      <div>
+        <div class="card-title" style="margin-bottom:.5rem">مثال Python</div>
+        <pre class="code-block" id="int-python-example" style="font-size:.71rem;max-height:180px;overflow-y:auto">جارٍ التحميل...</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- التثبيت التلقائي -->
+  <div class="card">
+    <div class="card-title">🚀 التثبيت التلقائي الكامل</div>
+    <p style="font-size:.79rem;color:var(--muted2);margin-bottom:1rem;line-height:1.65">
+      أمر واحد يكتشف ويثبت إعدادات كل الأدوات تلقائياً — يعمل على Windows و Linux و macOS:
+    </p>
+    <div style="background:var(--surface2);border:1px solid rgba(99,102,241,.3);border-radius:10px;padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+      <code id="int-install-cmd" style="font-family:monospace;font-size:.85rem;color:#a5b4fc">python install_integrations.py</code>
+      <button class="btn btn-primary btn-sm" onclick="copyInstallCmd()">📋 نسخ الأمر</button>
+    </div>
+    <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+      <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:.5rem .9rem;font-size:.74rem;color:var(--green)">✅ يكتشف Continue تلقائياً</div>
+      <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:.5rem .9rem;font-size:.74rem;color:var(--green)">✅ يكتشف Cline تلقائياً</div>
+      <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:.5rem .9rem;font-size:.74rem;color:var(--green)">✅ يأخذ نسخة احتياطية قبل التغيير</div>
+      <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:.5rem .9rem;font-size:.74rem;color:var(--green)">✅ يعمل على Windows / Linux / macOS</div>
+    </div>
+    <div style="margin-top:1rem">
+      <div class="card-title" style="margin-bottom:.4rem">نقاط API التكامل</div>
+      <div class="endpoint-row"><span class="method-pill method-GET">GET</span><span class="endpoint-path">/api/v1/cline/config</span></div>
+      <div class="endpoint-row"><span class="method-pill method-GET">GET</span><span class="endpoint-path">/api/v1/continue/config</span></div>
+      <div class="endpoint-row"><span class="method-pill method-GET">GET</span><span class="endpoint-path">/api/v1/continue/config.yaml</span></div>
+      <div class="endpoint-row"><span class="method-pill method-GET">GET</span><span class="endpoint-path">/api/v1/integrations/all</span></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ─── ECONOMY ─── -->
+<div id="page-economy" class="page">
+  <div class="ph">
+    <div class="ph-left"><h1>💡 التوفير</h1><p>Context Economy — يضغط التوكنز بذكاء مع الحفاظ على الجودة</p></div>
+    <div class="ph-actions"><button class="btn btn-ghost btn-sm" onclick="loadEconomy()">🔄 تحديث</button></div>
+  </div>
+
+  <div id="eco-status-banner" class="card" style="margin-bottom:1.2rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem">
+      <div style="display:flex;align-items:center;gap:.75rem">
+        <div id="eco-dot" style="width:10px;height:10px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:.88rem;font-weight:700;color:#fff" id="eco-mode-label">نظام التوفير مفعّل</div>
+          <div style="font-size:.71rem;color:var(--muted);margin-top:.1rem">يعمل على جميع الطلبات تلقائياً — أضف <code style="background:rgba(99,102,241,.15);padding:.05rem .3rem;border-radius:3px;color:#a5b4fc">ECONOMY_MODE=false</code> للتعطيل</div>
+        </div>
+      </div>
+      <span class="badge active" id="eco-badge">مفعّل</span>
+    </div>
+  </div>
+
+  <div class="stats-row" style="margin-bottom:1.4rem">
+    <div class="stat"><div class="stat-icon">📨</div><div class="stat-label">الطلبات المعالجة</div><div class="stat-value" id="eco-total">—</div></div>
+    <div class="stat"><div class="stat-icon">🗜️</div><div class="stat-label">توكنز موفّرة</div><div class="stat-value" id="eco-saved" style="color:var(--green)">—</div></div>
+    <div class="stat"><div class="stat-icon">📊</div><div class="stat-label">نسبة التوفير</div><div class="stat-value" id="eco-pct" style="color:var(--green)">—</div></div>
+    <div class="stat"><div class="stat-icon">📥</div><div class="stat-label">توكنز أصلية</div><div class="stat-value" id="eco-orig">—</div></div>
+    <div class="stat"><div class="stat-icon">✂️</div><div class="stat-label">بعد الضغط</div><div class="stat-value" id="eco-comp">—</div></div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.2rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem">
+      <div class="card-title" style="margin:0">نسبة الضغط الكلية</div>
+      <span id="eco-bar-label" style="font-size:.8rem;font-weight:700;color:var(--green)">0%</span>
+    </div>
+    <div class="budget-bar-wrap"><div id="eco-saving-bar" class="budget-bar" style="width:0%;background:linear-gradient(90deg,var(--green),var(--cyan))"></div></div>
+    <div style="display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin-top:.4rem"><span>0% — بدون ضغط</span><span>100% — أقصى توفير</span></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">توزيع الطلبات حسب النوع</div>
+      <div style="display:flex;flex-direction:column;gap:.7rem;margin-top:.3rem">
+        <div class="eco-type-row" data-type="SIMPLE">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem">
+            <span style="font-size:.78rem;font-weight:700;color:var(--cyan)">⚡ SIMPLE <span style="font-size:.65rem;color:var(--muted);font-weight:400">500 token · آخر رسالة</span></span>
+            <span class="eco-type-count" style="font-size:.82rem;font-weight:800;color:var(--cyan)">0</span>
+          </div>
+          <div style="height:5px;background:rgba(99,102,241,.1);border-radius:3px"><div class="eco-type-bar" style="height:100%;border-radius:3px;background:var(--cyan);width:0%;transition:width .5s"></div></div>
+        </div>
+        <div class="eco-type-row" data-type="CODING">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem">
+            <span style="font-size:.78rem;font-weight:700;color:var(--blue)">💻 CODING <span style="font-size:.65rem;color:var(--muted);font-weight:400">2000 token · آخر 5 رسائل</span></span>
+            <span class="eco-type-count" style="font-size:.82rem;font-weight:800;color:var(--blue)">0</span>
+          </div>
+          <div style="height:5px;background:rgba(99,102,241,.1);border-radius:3px"><div class="eco-type-bar" style="height:100%;border-radius:3px;background:var(--blue);width:0%;transition:width .5s"></div></div>
+        </div>
+        <div class="eco-type-row" data-type="COMPLEX">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem">
+            <span style="font-size:.78rem;font-weight:700;color:var(--accent3)">🧠 COMPLEX <span style="font-size:.65rem;color:var(--muted);font-weight:400">3000 token · آخر 8 رسائل</span></span>
+            <span class="eco-type-count" style="font-size:.82rem;font-weight:800;color:var(--accent3)">0</span>
+          </div>
+          <div style="height:5px;background:rgba(99,102,241,.1);border-radius:3px"><div class="eco-type-bar" style="height:100%;border-radius:3px;background:var(--accent3);width:0%;transition:width .5s"></div></div>
+        </div>
+        <div class="eco-type-row" data-type="FILE">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.25rem">
+            <span style="font-size:.78rem;font-weight:700;color:var(--yellow)">📄 FILE <span style="font-size:.65rem;color:var(--muted);font-weight:400">4000 token · آخر 3 رسائل</span></span>
+            <span class="eco-type-count" style="font-size:.82rem;font-weight:800;color:var(--yellow)">0</span>
+          </div>
+          <div style="height:5px;background:rgba(99,102,241,.1);border-radius:3px"><div class="eco-type-bar" style="height:100%;border-radius:3px;background:var(--yellow);width:0%;transition:width .5s"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📖 كيف يعمل النظام</div>
+      <div style="display:flex;flex-direction:column;gap:.85rem;margin-top:.4rem">
+        <div style="display:flex;gap:.75rem;align-items:flex-start">
+          <div style="width:26px;height:26px;border-radius:50%;background:rgba(6,182,212,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem;font-weight:800;color:var(--cyan)">1</div>
+          <div><div style="font-size:.8rem;font-weight:700;color:#fff">التصنيف التلقائي</div><div style="font-size:.7rem;color:var(--muted);margin-top:.1rem;line-height:1.5">يصنّف كل طلب حسب الكلمات المفتاحية والطول ووجود كود</div></div>
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:flex-start">
+          <div style="width:26px;height:26px;border-radius:50%;background:rgba(99,102,241,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem;font-weight:800;color:var(--accent3)">2</div>
+          <div><div style="font-size:.8rem;font-weight:700;color:#fff">ضغط السياق</div><div style="font-size:.7rem;color:var(--muted);margin-top:.1rem;line-height:1.5">Sliding Window · Smart Summary · Importance Scoring</div></div>
+        </div>
+        <div style="display:flex;gap:.75rem;align-items:flex-start">
+          <div style="width:26px;height:26px;border-radius:50%;background:rgba(16,185,129,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem;font-weight:800;color:var(--green)">3</div>
+          <div><div style="font-size:.8rem;font-weight:700;color:#fff">التوفير المتوقع</div><div style="font-size:.7rem;color:var(--muted);margin-top:.1rem;line-height:1.5">SIMPLE ~93% · CODING ~73% · COMPLEX ~60%</div></div>
+        </div>
+        <div style="margin-top:.2rem;padding:.6rem .85rem;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15);border-radius:8px;font-size:.71rem;color:var(--muted2);line-height:1.65">
+          ⚠️ النظام <strong style="color:#fff">لا يحذف system prompt أبداً</strong> ويحتفظ دائماً بالرسائل المهمة (الكود والأخطاء)
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ══ Key Pool Modal ══ -->
+<div class="modal-overlay" id="pool-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>🔑 Pool المفاتيح — <span id="pool-provider-name"></span></span>
+      <button class="btn btn-ghost btn-sm" onclick="closePoolModal()">✕</button>
+    </div>
+    <p style="font-size:.76rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">
+      المفاتيح المتعددة تضاعف الـ Rate Limit. كل مفتاح له وزن (Weight) يحدد نسبة الطلبات التي يستقبلها.
+      مفتاح بوزن 10 يستقبل ضعف الطلبات مقارنة بمفتاح بوزن 5.
+    </p>
+    <div id="pool-keys-list" style="margin-bottom:1rem;display:flex;flex-direction:column;gap:.4rem"></div>
+    <div style="border-top:1px solid var(--border);padding-top:1rem">
+      <form onsubmit="return false" class="form-row" style="margin-bottom:.7rem">
+        <input type="text" name="username" autocomplete="username" style="display:none" aria-hidden="true">
+        <div class="field"><label>مفتاح API جديد</label><input id="pnk" type="password" autocomplete="new-password" placeholder="الصق مفتاح..."></div>
+        <div class="field" style="max-width:110px"><label>تسمية</label><input id="pnl" type="text" placeholder="Key #2"></div>
+        <div class="field" style="max-width:80px"><label>وزن</label><input id="pnw" type="number" value="10" min="1" max="100"></div>
+      </form>
+      <button class="btn btn-primary btn-sm" onclick="addPoolKey()">➕ إضافة للـ Pool</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Toasts ══ -->
+<div class="toast-container" id="toasts"></div>
+
+<script>
+let TOKEN = null;
+let currentPoolProvider = null;
+let chatHistory = [];
+let chartReq = null, chartLat = null;
+
+const PROVIDER_MODELS = {
+  groq: ['llama-3.3-70b-versatile','llama3-70b-8192','llama3-8b-8192','mixtral-8x7b-32768','gemma-7b-it'],
+  sambanova: ['DeepSeek-V3.1','Meta-Llama-3.3-70B-Instruct','Meta-Llama-3.1-405B-Instruct','Meta-Llama-3.1-8B-Instruct','gpt-oss-120b','Gemma-4-31B-IT'],
+  openrouter: ['google/gemini-flash-1.5-free','meta-llama/llama-3-8b-instruct:free','mistralai/mistral-7b-instruct:free'],
+  gemini: ['gemini-2.5-flash','gemini-2.5-pro','gemini-1.5-flash','gemini-1.5-pro'],
+  cerebras: ['llama3.3-70b','llama3.1-70b','llama3.1-8b'],
+  mistral: ['mistral-large-latest','mistral-small-latest','codestral-latest','mistral-7b-instruct'],
+  together: ['meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo','meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo'],
+  siliconflow: ['Qwen/Qwen2.5-72B-Instruct','Qwen/Qwen2.5-7B-Instruct','THUDM/GLM-4-9B-Chat'],
+  deepinfra: ['meta-llama/Meta-Llama-3.1-70B-Instruct','meta-llama/Meta-Llama-3.1-8B-Instruct'],
+  nvidia: ['meta/llama-3.1-70b-instruct','meta/llama-3.1-8b-instruct','nvidia/nemotron-4-340b-instruct'],
+  github: ['gpt-4o-mini','gpt-4o','Meta-Llama-3.1-70B-Instruct','Mistral-large'],
+  cohere: ['command-r-plus','command-r','command-light'],
+  zhipu: ['glm-4-flash','glm-4-air','glm-4-long'],
+  novita: ['meta-llama/llama-3.1-70b-instruct','meta-llama/llama-3.1-8b-instruct'],
+  monsterapi: ['llama-3-8b-instruct','qwen-2.5-7b','mistral-7b-v0.2'],
+  ai21: ['jamba-1.5-large','jamba-1.5-mini'],
+  huggingface: ['meta-llama/Meta-Llama-3-8B-Instruct','Qwen/Qwen2.5-7B-Instruct'],
+  perplexity: ['sonar','sonar-pro','sonar-reasoning'],
+  fireworks: ['accounts/fireworks/models/llama-v3p1-70b-instruct','accounts/fireworks/models/llama-v3p1-8b-instruct'],
+  runpod: ['Custom serverless endpoint'],
+};
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const r = await fetch('/api/v1/auth/demo-token', {method:'POST'});
+    TOKEN = (await r.json()).access_token;
+    await Promise.all([loadSupportedProviders(), loadStats()]);
+    setInterval(() => {
+      const activePage = document.querySelector('.page.active')?.id;
+      if (activePage === 'page-overview') loadStats();
+      if (activePage === 'page-rankings') loadRankings();
+    }, 15000);
+    loadAliases();
+    setProxyUrls();
+  } catch(e) { toast('فشل الاتصال بالخادم', 'error'); }
+}
+
+function ah() { return {'Content-Type':'application/json','Authorization':'Bearer '+TOKEN} }
+
+function setProxyUrls() {
+  const base = window.location.origin;
+  document.querySelectorAll('.base-url').forEach(el => el.textContent = base);
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  const actions = {
+    providers: loadProviders,
+    rankings: loadRankings,
+    history: loadHistory,
+    chat: loadChatProviders,
+    budget: loadBudget,
+    aliases: loadAliases,
+    continue: loadContinueConfig,
+    economy: loadEconomy,
+  };
+  if (actions[name]) actions[name]();
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const r = await fetch('/api/v1/stats/full', {headers: ah()});
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById('s-total').textContent = fmtNum(d.total_requests);
+    document.getElementById('s-failed').textContent = `${d.failed} فشل`;
+    document.getElementById('s-rate').textContent = d.success_rate + '%';
+    document.getElementById('s-lat').textContent = d.avg_latency_ms + 'ms';
+    document.getElementById('s-tokens').textContent = fmtNum(d.total_tokens||0);
+    document.getElementById('s-cost').textContent = '$' + (d.total_cost_usd||0).toFixed(4);
+    const active = Object.values(d.providers||{}).filter(p=>p.status==='active').length;
+    document.getElementById('s-active').textContent = active + '/' + Object.keys(d.providers||{}).length;
+    renderMiniProviders(d.providers||{});
+    renderCharts(d.recent_history||[]);
+    if (d.budget?.is_enabled) renderBudgetBar(d.budget);
+  } catch(e){}
+}
+
+function renderBudgetBar(budget) {
+  const card = document.getElementById('budget-overview-card');
+  if (card) card.style.display = '';
+  const pct = Math.min(budget.pct_used||0, 100);
+  const bar = document.getElementById('budget-bar');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.className = 'budget-bar' + (budget.is_exceeded?' exceeded':budget.is_tight?' tight':'');
+  }
+  const lbl = document.getElementById('budget-pct-label');
+  if (lbl) {
+    lbl.textContent = pct.toFixed(1) + '%';
+    lbl.style.color = budget.is_exceeded?'var(--red)':budget.is_tight?'var(--yellow)':'var(--green)';
+  }
+  const sl = document.getElementById('budget-spent-label');
+  const ll = document.getElementById('budget-limit-label');
+  if (sl) sl.textContent = '$' + budget.spent_today_usd.toFixed(4);
+  if (ll) ll.textContent = '$' + budget.daily_limit_usd.toFixed(2);
+  const sub = document.getElementById('s-budget-sub');
+  if (sub) sub.textContent = pct.toFixed(1) + '% من ' + '$' + budget.daily_limit_usd.toFixed(2);
+}
+
+function fmtNum(n) {
+  if (n >= 1e6) return (n/1e6).toFixed(1)+'M';
+  if (n >= 1000) return (n/1000).toFixed(1)+'K';
+  return n.toString();
+}
+
+function renderMiniProviders(providers) {
+  const el = document.getElementById('mini-providers');
+  const sc = {active:'var(--green)',cooldown:'var(--yellow)',limited:'var(--blue)',inactive:'var(--muted)'};
+  el.innerHTML = Object.entries(providers).map(([id,p])=>`
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.8rem;display:flex;align-items:center;gap:.7rem;transition:border-color .2s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="width:8px;height:8px;border-radius:50%;background:${sc[p.status]||'var(--muted)'};flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.8rem;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name||id}</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.1rem">${p.avg_latency_ms}ms · ${p.requests_today} اليوم${p.pool_size>0?' · 🔑'+p.pool_size:''}</div>
+      </div>
+      <span style="font-size:.65rem;color:${sc[p.status]||'var(--muted)'};font-weight:700;text-transform:uppercase">${p.status}</span>
+    </div>`).join('')||'<div style="color:var(--muted);font-size:.83rem;text-align:center;grid-column:1/-1;padding:1.5rem">لم تضف أي مزود بعد</div>';
+}
+
+function renderCharts(history) {
+  if (chartReq) chartReq.destroy();
+  if (chartLat) chartLat.destroy();
+  const labels = history.map((_,i)=>i+1);
+  const baseOpts = {responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#64748b',font:{size:10}}}}};
+  const gridColor = 'rgba(99,102,241,.07)';
+  const tickStyle = {color:'#475569',font:{size:10}};
+
+  chartReq = new Chart(document.getElementById('chartRequests'), {
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'نجاح',data:history.map(r=>r.success?1:0),backgroundColor:'rgba(16,185,129,.45)',borderColor:'rgba(16,185,129,.8)',borderWidth:1},
+      {label:'فشل',data:history.map(r=>r.success?0:1),backgroundColor:'rgba(239,68,68,.45)',borderColor:'rgba(239,68,68,.8)',borderWidth:1},
+    ]},
+    options:{...baseOpts,scales:{x:{ticks:tickStyle,grid:{color:gridColor}},y:{ticks:tickStyle,grid:{color:gridColor},max:1}}}
+  });
+
+  chartLat = new Chart(document.getElementById('chartLatency'), {
+    type:'line',
+    data:{labels,datasets:[{
+      label:'ms',data:history.map(r=>r.latency_ms),
+      borderColor:'rgba(99,102,241,.85)',backgroundColor:'rgba(99,102,241,.08)',
+      fill:true,tension:.4,pointRadius:2.5,pointBackgroundColor:'rgba(99,102,241,.9)',
+    }]},
+    options:{...baseOpts,scales:{x:{ticks:tickStyle,grid:{color:gridColor}},y:{ticks:tickStyle,grid:{color:gridColor}}}}
+  });
+}
+
+// ── Rankings ──────────────────────────────────────────────────────────────────
+async function loadRankings() {
+  try {
+    const r = await fetch('/api/v1/rankings', {headers: ah()});
+    const data = await r.json();
+    const body = document.getElementById('rankings-body');
+    if (!data.length) {
+      body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:2rem">لا يوجد مزودون بعد</td></tr>';
+      return;
+    }
+    const maxScore = Math.max(...data.map(d=>d.score), 1);
+    const statusLabel = {active:'نشط',cooldown:'Cooldown',limited:'محدود',inactive:'معطل'};
+    body.innerHTML = data.map((d,i)=>{
+      const rankClass = i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-n';
+      const pct = Math.min(d.score/maxScore*100, 100);
+      return `<tr>
+        <td><span class="rank-num ${rankClass}">${i+1}</span></td>
+        <td><div style="font-weight:700;font-size:.85rem">${d.name}</div><div style="font-size:.67rem;color:var(--muted);font-family:monospace">${d.provider_id}</div></td>
+        <td><span class="badge ${d.status}">${statusLabel[d.status]||d.status}</span></td>
+        <td><span style="color:${d.success_rate>=90?'var(--green)':d.success_rate>=70?'var(--yellow)':'var(--red)'};font-weight:700">${d.success_rate}%</span></td>
+        <td><span style="color:${d.avg_latency_ms<500?'var(--green)':d.avg_latency_ms<1500?'var(--yellow)':'var(--red)'}">${d.avg_latency_ms}ms</span></td>
+        <td>${fmtNum(d.total_requests)}</td>
+        <td>${d.active_keys}<span style="color:var(--muted)">/${d.pool_keys}</span></td>
+        <td style="color:var(--yellow)">$${d.total_cost_usd.toFixed(4)}</td>
+        <td><div style="display:flex;align-items:center;gap:.4rem"><div class="score-bar-wrap"><div class="score-bar" style="width:${pct}%"></div></div><span style="font-size:.75rem;font-weight:700">${d.score}</span></div></td>
+      </tr>`;
+    }).join('');
+  } catch(e){ console.error(e); }
+}
+
+// ── Providers ─────────────────────────────────────────────────────────────────
+let supported = [];
+
+async function loadSupportedProviders() {
+  try {
+    const r = await fetch('/api/v1/providers/supported');
+    supported = await r.json();
+    const sel = document.getElementById('add-type');
+    sel.innerHTML = '<option value="auto">🔍 اكتشاف تلقائي</option>' +
+      supported.map(p=>`<option value="${p.id}">${p.name} — ${p.key_hint}</option>`).join('');
+  } catch(e){}
+}
+
+async function loadProviders() {
+  try {
+    const r = await fetch('/api/v1/providers', {headers: ah()});
+    const providers = await r.json();
+    renderProviders(providers);
+  } catch(e){}
+}
+
+function renderProviders(providers) {
+  const el = document.getElementById('providers-list');
+  if (!providers.length) {
+    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:3rem">لم تضف أي مزود. ابدأ بإضافة مفتاح API أعلاه.</div>';
+    return;
+  }
+  const stLabel = {active:'نشط',cooldown:'Cooldown',limited:'محدود',inactive:'معطل'};
+  el.innerHTML = providers.map(p=>{
+    const models = Array.isArray(p.models) && p.models.length ? p.models : (PROVIDER_MODELS[p.id]||[]);
+    const modelsHtml = models.length
+      ? models.map(m=>`<span style="display:inline-flex;align-items:center;gap:.3rem;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.18);border-radius:6px;padding:.18rem .55rem;font-size:.67rem;font-family:monospace;color:#a5b4fc;cursor:pointer;transition:background .15s" onclick="useModel('${m}')" title="انقر للاستخدام في Chat">${m}</span>`).join('')
+      : '<span style="color:var(--muted);font-size:.73rem">لا توجد نماذج — اضغط اكتشاف</span>';
+    return `
+    <div class="provider-card">
+      <div class="p-header">
+        <div><div class="p-name">${p.name}</div><div class="p-id">${p.id} · <span style="color:var(--muted);font-size:.63rem">${p.base_url}</span></div></div>
+        <span class="badge ${p.status}">${stLabel[p.status]||p.status}</span>
+      </div>
+      <div class="p-stats">
+        <div class="ps"><div class="ps-v">${fmtNum(p.total_requests)}</div><div class="ps-l">إجمالي</div></div>
+        <div class="ps"><div class="ps-v">${Math.round(p.avg_latency_ms)}ms</div><div class="ps-l">تأخير</div></div>
+        <div class="ps"><div class="ps-v">${p.failures}</div><div class="ps-l">أخطاء</div></div>
+        <div class="ps"><div class="ps-v">${p.requests_today}</div><div class="ps-l">اليوم</div></div>
+      </div>
+
+      <!-- Models Section -->
+      <div style="margin:.6rem 0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.45rem">
+          <div style="font-size:.63rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em">🤖 النماذج (${models.length})</div>
+          <button class="discover-btn" style="font-size:.63rem;padding:.2rem .45rem" onclick="discoverModels('${p.id}', event)">🔍 تحديث</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:.3rem">${modelsHtml}</div>
+      </div>
+
+      <!-- Pool Section -->
+      <div class="pool-section" onclick="openPoolModal('${p.id}','${p.name}')">
+        <div class="pool-header">🔑 Pool المفاتيح <span id="pool-count-${p.id}">${(p.key_pool||[]).length} مفاتيح</span></div>
+        <div class="key-health-dots" id="pool-dots-${p.id}"></div>
+      </div>
+
+      <div class="p-actions">
+        ${p.status==='inactive'
+          ? `<button class="btn btn-success btn-sm" onclick="enableProvider('${p.id}')">✅ تفعيل</button>`
+          : `<button class="btn btn-ghost btn-sm" onclick="disableProvider('${p.id}')">⏸ تعطيل</button>`}
+        <button class="btn btn-danger btn-sm" onclick="deleteProvider('${p.id}')">🗑 حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  providers.forEach(p => loadPoolDotsForCard(p.id));
+}
+
+function useModel(model) {
+  showPage('chat', document.querySelector('.nav-item[onclick*="chat"]'));
+  setTimeout(()=>{
+    const sel = document.getElementById('chat-model');
+    if (sel) { sel.value = model; if (!sel.value) { const o=document.createElement('option'); o.value=model; o.textContent=model; sel.appendChild(o); sel.value=model; } }
+  }, 300);
+  toast('تم اختيار النموذج: '+model, 'info');
+}
+
+async function loadPoolDotsForCard(providerId) {
+  try {
+    const r = await fetch(`/api/v1/providers/${providerId}/keys`, {headers: ah()});
+    const keys = await r.json();
+    const dotsEl = document.getElementById('pool-dots-'+providerId);
+    const countEl = document.getElementById('pool-count-'+providerId);
+    if (dotsEl) dotsEl.innerHTML = keys.map(k=>`<div class="kd ${k.status}" title="${k.key_preview} — ${k.status} — ${k.requests_used} طلبات"></div>`).join('');
+    if (countEl) countEl.textContent = keys.length + ' مفاتيح إضافية';
+  } catch(e){}
+}
+
+async function discoverModels(providerId, event) {
+  const btn = event.currentTarget;
+  btn.textContent = '⏳ جارٍ الاكتشاف...';
+  btn.style.pointerEvents = 'none';
+  try {
+    const r = await fetch(`/api/v1/providers/${providerId}/models/discover`, {method:'POST', headers: ah()});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail||'خطأ');
+    toast(`🔍 ${providerId}: ${d.models_found} نموذج تم اكتشافه`, 'success');
+    loadProviders();
+    // Update chat model list
+    updateModelDatalist(d.models);
+  } catch(e) { toast(e.message, 'error'); }
+  finally { btn.textContent = '🔍 اكتشاف النماذج'; btn.style.pointerEvents = ''; }
+}
+
+function updateModelDatalist(models) {
+  const dl = document.getElementById('model-list');
+  if (!dl || !models) return;
+  const existing = Array.from(dl.options).map(o=>o.value);
+  models.forEach(m => { if (!existing.includes(m)) { const o = document.createElement('option'); o.value = m; dl.appendChild(o); } });
+}
+
+let detectedType = null;
+function detectFromKey() {
+  const key = document.getElementById('add-key').value.trim();
+  const banner = document.getElementById('detect-banner');
+  if (key.length < 4) { banner.classList.remove('visible'); detectedType = null; return; }
+  const map = [
+    ['sk-or-v1-','openrouter'],['sk-or-','openrouter'],['github_pat_','github'],
+    ['AIzaSy','gemini'],['nvapi-','nvidia'],['pplx-','perplexity'],
+    ['csk_','cerebras'],['gsk_','groq'],['ghp_','github'],
+    ['hf_','huggingface'],['fw_','fireworks'],['rpa-','runpod'],['sn-','sambanova'],
+  ];
+  for (const [prefix, id] of map) {
+    if (key.startsWith(prefix)) {
+      const p = supported.find(x=>x.id===id);
+      if (p) {
+        detectedType = id;
+        document.getElementById('detected-name').textContent = p.name;
+        banner.classList.add('visible');
+        document.getElementById('add-type').value = id;
+        return;
+      }
+    }
+  }
+  banner.classList.remove('visible'); detectedType = null;
+}
+
+function clearDetect() {
+  document.getElementById('detect-banner').classList.remove('visible');
+  document.getElementById('add-type').value = 'auto';
+  detectedType = null;
+}
+
+async function addProvider() {
+  const type = document.getElementById('add-type').value;
+  const key = document.getElementById('add-key').value.trim();
+  if (!key) { toast('أدخل مفتاح API', 'error'); return; }
+  try {
+    const r = await fetch('/api/v1/providers', {method:'POST', headers:ah(), body:JSON.stringify({provider_type:type, api_key:key})});
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail||'خطأ');
+    toast('تم إضافة '+d.name+' ✅', 'success');
+    document.getElementById('add-key').value = '';
+    clearDetect();
+    loadProviders(); loadStats();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteProvider(id) {
+  if (!confirm('حذف '+id+'؟')) return;
+  const r = await fetch('/api/v1/providers/'+id, {method:'DELETE', headers:ah()});
+  if (r.ok) { toast('تم الحذف', 'success'); loadProviders(); loadStats(); }
+  else toast('فشل الحذف', 'error');
+}
+async function enableProvider(id) {
+  await fetch('/api/v1/providers/'+id+'/enable', {method:'POST', headers:ah()});
+  loadProviders(); toast('تم التفعيل', 'success');
+}
+async function disableProvider(id) {
+  await fetch('/api/v1/providers/'+id+'/disable', {method:'POST', headers:ah()});
+  loadProviders(); toast('تم التعطيل', 'info');
+}
+
+// ── Pool Modal ────────────────────────────────────────────────────────────────
+async function openPoolModal(providerId, providerName) {
+  currentPoolProvider = providerId;
+  document.getElementById('pool-provider-name').textContent = providerName || providerId;
+  document.getElementById('pool-modal').classList.add('open');
+  await loadPoolKeys();
+}
+function closePoolModal() {
+  document.getElementById('pool-modal').classList.remove('open');
+  currentPoolProvider = null;
+}
+
+async function loadPoolKeys() {
+  try {
+    const r = await fetch(`/api/v1/providers/${currentPoolProvider}/keys`, {headers:ah()});
+    const keys = await r.json();
+    const el = document.getElementById('pool-keys-list');
+    if (!keys.length) {
+      el.innerHTML = '<div style="color:var(--muted);font-size:.78rem;text-align:center;padding:.8rem">لا توجد مفاتيح إضافية. أضف مفتاحاً أدناه.</div>';
+      return;
+    }
+    const stColor = {active:'var(--green)',degraded:'var(--yellow)',disabled:'var(--red)'};
+    el.innerHTML = keys.map(k=>`
+      <div class="key-item">
+        <div class="key-left">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div style="width:8px;height:8px;border-radius:50%;background:${stColor[k.status]||'var(--muted)'}"></div>
+            <span class="key-preview">${k.key_preview}</span>
+            <span class="badge ${k.status}" style="font-size:.6rem">${k.status}</span>
+          </div>
+          <div class="key-meta">${k.label||'بدون تسمية'} · ${k.requests_used} طلبات · ${k.failures} أخطاء · ${Math.round(k.avg_latency_ms)}ms</div>
+        </div>
+        <div class="key-right">
+          <div style="display:flex;align-items:center;gap:.3rem;font-size:.72rem;color:var(--muted)">
+            وزن: <input class="weight-input" type="number" value="${k.weight}" min="1" max="100"
+              onchange="updateKeyWeight(${k.id},this.value)" style="width:50px">
+          </div>
+          ${k.status==='disabled'?'<button class="btn btn-yellow btn-sm" onclick="recoverKey('+k.id+')">↺</button>':''}
+          <button class="btn btn-danger btn-sm" onclick="deletePoolKey(${k.id})">✕</button>
+        </div>
+      </div>`).join('');
+  } catch(e){}
+}
+
+async function addPoolKey() {
+  const key = document.getElementById('pnk').value.trim();
+  const label = document.getElementById('pnl').value.trim();
+  const weight = parseFloat(document.getElementById('pnw').value) || 10;
+  if (!key) { toast('أدخل مفتاح', 'error'); return; }
+  try {
+    const r = await fetch(`/api/v1/providers/${currentPoolProvider}/keys`, {
+      method:'POST', headers:ah(), body:JSON.stringify({api_key:key, label:label||null, weight})
+    });
+    if (!r.ok) { const d=await r.json(); throw new Error(d.detail||'خطأ'); }
+    toast('تم إضافة المفتاح ✅', 'success');
+    document.getElementById('pnk').value = '';
+    document.getElementById('pnl').value = '';
+    await loadPoolKeys();
+    loadPoolDotsForCard(currentPoolProvider);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deletePoolKey(keyId) {
+  const r = await fetch(`/api/v1/providers/${currentPoolProvider}/keys/${keyId}`, {method:'DELETE', headers:ah()});
+  if (r.ok) { toast('تم الحذف', 'success'); await loadPoolKeys(); loadPoolDotsForCard(currentPoolProvider); }
+}
+
+async function updateKeyWeight(keyId, weight) {
+  await fetch(`/api/v1/providers/${currentPoolProvider}/keys/${keyId}?weight=${weight}`, {method:'PATCH', headers:ah()});
+  toast('تم تحديث الوزن', 'info');
+}
+
+async function recoverKey(keyId) {
+  const r = await fetch(`/api/v1/providers/${currentPoolProvider}/keys/${keyId}/recover`, {method:'POST', headers:ah()});
+  if (r.ok) { toast('تم تعافي المفتاح ✅', 'success'); await loadPoolKeys(); loadPoolDotsForCard(currentPoolProvider); }
+}
+
+// ── Aliases ───────────────────────────────────────────────────────────────────
+async function loadAliases() {
+  try {
+    const r = await fetch('/api/v1/aliases', {headers:ah()});
+    const data = await r.json();
+    const el = document.getElementById('aliases-grid');
+    el.innerHTML = Object.entries(data).map(([alias, info])=>`
+      <div class="alias-card">
+        <div class="alias-name">"${alias}"</div>
+        <div class="alias-desc">${info.description}</div>
+        <div class="alias-models">${info.candidates.slice(0,4).join('<br>')}</div>
+      </div>`).join('');
+    // Also add aliases to chat datalist
+    const dl = document.getElementById('model-list');
+    if (dl) Object.keys(data).forEach(a=>{ const o=document.createElement('option'); o.value=a; dl.appendChild(o); });
+  } catch(e){}
+}
+
+// ── Budget ────────────────────────────────────────────────────────────────────
+async function loadBudget() {
+  try {
+    const r = await fetch('/api/v1/budget', {headers:ah()});
+    const d = await r.json();
+    const el = document.getElementById('budget-details');
+    const pct = d.pct_used||0;
+    el.innerHTML = `
+      <div>الحد اليومي: <strong style="color:#fff">$${d.daily_limit_usd.toFixed(2)}</strong> ${d.is_enabled?'':'(معطّل)'}</div>
+      <div>الإنفاق اليوم: <strong style="color:${d.is_exceeded?'var(--red)':d.is_tight?'var(--yellow)':'var(--green)'}">$${d.spent_today_usd.toFixed(6)}</strong></div>
+      <div>المتبقي: <strong style="color:#fff">${d.remaining_usd!=null?'$'+d.remaining_usd.toFixed(4):'لا حد'}</strong></div>
+      <div>الحالة: <strong style="color:${d.is_exceeded?'var(--red)':d.is_tight?'var(--yellow)':'var(--green)'}">${d.is_exceeded?'تجاوز الحد ⚠️':d.is_tight?'قريب من الحد 🟡':'ضمن الحد ✅'}</strong></div>
+    `;
+    const bar = document.getElementById('budget-bar2');
+    if (bar) { bar.style.width=Math.min(pct,100)+'%'; bar.className='budget-bar'+(d.is_exceeded?' exceeded':d.is_tight?' tight':''); }
+    document.getElementById('budget-limit').value = d.daily_limit_usd||'';
+    document.getElementById('budget-thresh').value = Math.round((d.cheap_threshold_pct||0.9)*100);
+    document.getElementById('thresh-val').textContent = Math.round((d.cheap_threshold_pct||0.9)*100);
+    renderBudgetBar(d);
+  } catch(e){}
+}
+
+async function saveBudget() {
+  const limit = parseFloat(document.getElementById('budget-limit').value)||0;
+  const thresh = parseFloat(document.getElementById('budget-thresh').value)/100;
+  try {
+    const r = await fetch('/api/v1/budget', {method:'POST', headers:ah(), body:JSON.stringify({daily_limit_usd:limit, cheap_threshold_pct:thresh})});
+    if (!r.ok) throw new Error('خطأ');
+    toast('تم حفظ الميزانية ✅', 'success');
+    loadBudget();
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function resetBudget() {
+  if (!confirm('إعادة تعيين الإنفاق إلى $0؟')) return;
+  await fetch('/api/v1/budget/reset', {method:'POST', headers:ah()});
+  toast('تمت إعادة التعيين', 'success');
+  loadBudget();
+}
+
+// ── History ───────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  try {
+    const r = await fetch('/api/v1/history/db?limit=50', {headers:ah()});
+    const records = await r.json();
+    const body = document.getElementById('history-body');
+    if (!records.length) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:2rem">لا يوجد سجل</td></tr>'; return; }
+    body.innerHTML = records.map(r=>`<tr>
+      <td><span style="font-weight:600;font-size:.8rem">${r.provider_id}</span></td>
+      <td><span style="font-size:.71rem;color:var(--muted)">${(r.model||'').slice(0,30)}</span></td>
+      <td>${r.latency_ms}ms</td>
+      <td>${r.tokens_used||0}</td>
+      <td style="color:var(--yellow)">$${(r.estimated_cost_usd||0).toFixed(6)}</td>
+      <td><span class="pill ${r.success?'pill-ok':'pill-fail'}">${r.success?'نجح':'فشل'}</span></td>
+      <td style="font-size:.7rem;color:var(--muted)">${r.timestamp?r.timestamp.slice(0,19).replace('T',' '):''}</td>
+    </tr>`).join('');
+  } catch(e){}
+}
+
+// ── Chat ──────────────────────────────────────────────────────────────────────
+let allProviders = [];
+
+async function loadChatProviders() {
+  try {
+    const r = await fetch('/api/v1/providers', {headers:ah()});
+    allProviders = await r.json();
+    const hintSel = document.getElementById('chat-hint');
+    hintSel.innerHTML = '<option value="">— Auto (Smart Routing) —</option>' +
+      allProviders.filter(p=>p.status==='active').map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+    populateModelSelect();
+  } catch(e){}
+}
+
+function onProviderChange() { populateModelSelect(); }
+
+function populateModelSelect() {
+  const providerId = document.getElementById('chat-hint').value;
+  const modelSel = document.getElementById('chat-model');
+  const prevModel = modelSel.value;
+
+  let models = [];
+  if (!providerId) {
+    const seen = new Set();
+    allProviders.filter(p=>p.status==='active').forEach(p => {
+      const provModels = (p.models && p.models.length) ? p.models : (PROVIDER_MODELS[p.id] || []);
+      provModels.forEach(m => { if (!seen.has(m)) { seen.add(m); models.push({label:`${m}  (${p.name})`, value:m}); } });
+    });
+  } else {
+    const prov = allProviders.find(p=>p.id===providerId);
+    if (prov) {
+      const provModels = (prov.models && prov.models.length) ? prov.models : (PROVIDER_MODELS[prov.id] || []);
+      models = provModels.map(m=>({label:m, value:m}));
+    }
+  }
+
+  const aliases = ['best-70b','best-8b','best-flash','best-large','best-coder','best-free','best-cheap','best-reasoning'];
+  modelSel.innerHTML =
+    '<optgroup label="🎯 نماذج ذكية (Aliases)">' +
+    aliases.map(a=>`<option value="${a}">🎯 ${a}</option>`).join('') +
+    '</optgroup>' +
+    (models.length
+      ? '<optgroup label="🔌 نماذج المزود">' +
+        models.map(m=>`<option value="${m.value}">${m.label}</option>`).join('') +
+        '</optgroup>'
+      : '');
+
+  const opts = Array.from(modelSel.options).map(o=>o.value);
+  modelSel.value = opts.includes(prevModel) ? prevModel : (models[0]?.value || 'best-70b');
+}
+
+function clearChat() {
+  chatHistory = [];
+  document.getElementById('chat-messages').innerHTML = '<div class="msg msg-system">تمت إعادة تعيين المحادثة.</div>';
+  document.getElementById('chat-info').style.display='none';
+}
+
+function chatKey(e) { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();} }
+
+function addMsg(role, content, meta=null) {
+  const el = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg msg-'+role;
+  div.textContent = content;
+  if (meta) {
+    const m = document.createElement('div');
+    m.className = 'msg-meta';
+    m.innerHTML = Object.entries(meta).map(([k,v])=>`<span>${k}: ${v}</span>`).join('');
+    div.appendChild(m);
+  }
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+  return div;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('send-btn').disabled = true;
+
+  const model = document.getElementById('chat-model').value.trim();
+  const strategy = document.getElementById('chat-strategy').value;
+  const hint = document.getElementById('chat-hint').value;
+  const temp = parseFloat(document.getElementById('chat-temp').value);
+  const maxT = parseInt(document.getElementById('chat-maxt').value);
+  const stream = document.getElementById('chat-stream').checked;
+
+  chatHistory.push({role:'user', content:text});
+  addMsg('user', text);
+
+  const typEl = document.getElementById('typing-ind');
+  const typTxt = document.getElementById('typing-txt');
+  typEl.classList.add('visible');
+  typTxt.textContent = `جارٍ الاتصال بـ ${model}...`;
+
+  const body = {model, messages:chatHistory, temperature:temp, max_tokens:maxT, strategy, stream, provider_hint:hint||undefined};
+
+  try {
+    if (stream) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = 'msg msg-assistant';
+      document.getElementById('chat-messages').appendChild(msgDiv);
+      const resp = await fetch('/api/v1/chat/stream', {method:'POST', headers:ah(), body:JSON.stringify(body)});
+      typEl.classList.remove('visible');
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let full = '', provUsed = '', costUsed = 0, latUsed = 0;
+      while (true) {
+        const {done,value} = await reader.read();
+        if (done) break;
+        const lines = decoder.decode(value).split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const chunk = line.slice(6);
+          if (chunk==='[DONE]') break;
+          try {
+            const parsed = JSON.parse(chunk);
+            if (parsed.type==='start'){provUsed=parsed.provider;continue;}
+            if (parsed.type==='done'){costUsed=parsed.cost_usd;latUsed=parsed.latency_ms;continue;}
+            if (parsed.error) continue;
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta){full+=delta;msgDiv.textContent=full;document.getElementById('chat-messages').scrollTop=99999;}
+          } catch(e){}
+        }
+      }
+      chatHistory.push({role:'assistant',content:full});
+      updateChatInfo(provUsed, latUsed, 0, costUsed);
+    } else {
+      const r = await fetch('/api/v1/chat', {method:'POST', headers:ah(), body:JSON.stringify(body)});
+      typEl.classList.remove('visible');
+      const d = await r.json();
+      if (!r.ok) {
+        const det = d.detail;
+        const msg = typeof det === 'object'
+          ? (det.last_error || det.error || JSON.stringify(det))
+          : (det || 'فشل');
+        throw new Error(msg);
+      }
+      const content = d.result?.choices?.[0]?.message?.content||JSON.stringify(d.result);
+      chatHistory.push({role:'assistant',content});
+      const usage = d.result?.usage||{};
+      addMsg('assistant', content, {'مزود':d.provider_used, 'تأخير':Math.round(d.latency_ms)+'ms', 'توكنز':usage.total_tokens||0});
+      updateChatInfo(d.provider_used, d.latency_ms, usage.total_tokens, d.budget?.spent_today_usd);
+    }
+  } catch(e) {
+    typEl.classList.remove('visible');
+    addMsg('assistant', '⚠️ خطأ: '+e.message);
+  }
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-input').focus();
+}
+
+function updateChatInfo(provider, latency, tokens, cost) {
+  document.getElementById('chat-info').style.display='block';
+  document.getElementById('ci-p').textContent = provider||'—';
+  document.getElementById('ci-l').textContent = Math.round(latency)+'ms';
+  document.getElementById('ci-t').textContent = tokens||'—';
+  document.getElementById('ci-c').textContent = cost?'$'+parseFloat(cost).toFixed(6):'—';
+}
+
+// ── Integration Tab ───────────────────────────────────────────────────────────
+let integrationData = null;
+
+async function loadIntegrations() {
+  try {
+    const r = await fetch('/api/v1/integrations/all');
+    integrationData = await r.json();
+
+    const clineJson = JSON.stringify(integrationData.cline, null, 2);
+    const contJson  = JSON.stringify(integrationData.continue_json, null, 2);
+    document.getElementById('int-cline-json').textContent    = clineJson;
+    document.getElementById('int-continue-json').textContent = contJson;
+
+    const openaiUrl = integrationData.openai_compatible?.base_url || '';
+    document.getElementById('int-openai-url').textContent = openaiUrl + '/chat/completions';
+
+    const installUrl = integrationData.kurdost_url || window.location.origin;
+    document.getElementById('int-install-cmd').textContent =
+      `python install_integrations.py --url ${installUrl}`;
+
+    const pythonEx = `from openai import OpenAI
+
+client = OpenAI(
+    base_url="${openaiUrl}",
+    api_key="kurdost-proxy",
+)
+
+response = client.chat.completions.create(
+    model="${(integrationData.available_models||['llama-3.3-70b-versatile'])[0]}",
+    messages=[{"role": "user", "content": "مرحباً!"}],
+)
+print(response.choices[0].message.content)`;
+    document.getElementById('int-python-example').textContent = pythonEx;
+
+    const activeProv = integrationData.active_providers || 0;
+    const clineEl    = document.getElementById('int-cline-status');
+    const contEl     = document.getElementById('int-continue-status');
+    clineEl.className = activeProv > 0 ? 'badge active' : 'badge inactive';
+    clineEl.textContent = activeProv > 0 ? `جاهز (${activeProv} مزود)` : 'لا يوجد مزود';
+    contEl.className = activeProv > 0 ? 'badge active' : 'badge inactive';
+    contEl.textContent = activeProv > 0 ? `جاهز (${activeProv} مزود)` : 'لا يوجد مزود';
+
+    const clineBlob = new Blob([clineJson], {type:'application/json'});
+    document.getElementById('int-cline-dl').href = URL.createObjectURL(clineBlob);
+    const contBlob = new Blob([contJson], {type:'application/json'});
+    document.getElementById('int-continue-dl').href = URL.createObjectURL(contBlob);
+
+  } catch(e) {
+    ['int-cline-json','int-continue-json'].forEach(id => {
+      document.getElementById(id).textContent = 'خطأ في تحميل الإعداد: ' + e.message;
+    });
+  }
+}
+
+function copyClineConfig() {
+  if (!integrationData) return;
+  navigator.clipboard.writeText(JSON.stringify(integrationData.cline, null, 2));
+  toast('تم نسخ إعدادات Cline 📋', 'success');
+}
+
+function copyContinueIntConfig() {
+  if (!integrationData) return;
+  navigator.clipboard.writeText(JSON.stringify(integrationData.continue_json, null, 2));
+  toast('تم نسخ إعدادات Continue 📋', 'success');
+}
+
+function copyOpenAIUrl() {
+  const el = document.getElementById('int-openai-url');
+  navigator.clipboard.writeText(el.textContent);
+  toast('تم نسخ Base URL 📋', 'success');
+}
+
+function copyInstallCmd() {
+  const el = document.getElementById('int-install-cmd');
+  navigator.clipboard.writeText(el.textContent);
+  toast('تم نسخ الأمر 📋', 'success');
+}
+
+// ── Continue ──────────────────────────────────────────────────────────────────
+let continueConfigData = null;
+
+async function loadContinueConfig() {
+  try {
+    const r = await fetch('/api/v1/continue/config', {headers:ah()});
+    continueConfigData = await r.json();
+    document.getElementById('continue-json').textContent = JSON.stringify(continueConfigData, null, 2);
+  } catch(e) { document.getElementById('continue-json').textContent = 'خطأ في تحميل الإعداد'; }
+}
+
+function copyContinueConfig() {
+  if (!continueConfigData) return;
+  navigator.clipboard.writeText(JSON.stringify(continueConfigData, null, 2));
+  toast('تم نسخ الإعداد 📋', 'success');
+}
+
+// ── Economy ───────────────────────────────────────────────────────────────────
+async function loadEconomy() {
+  try {
+    const r = await fetch('/api/v1/economy/stats', {headers: ah()});
+    if (!r.ok) return;
+    const d = await r.json();
+
+    const enabled = d.enabled !== false;
+    document.getElementById('eco-dot').style.background = enabled ? 'var(--green)' : 'var(--muted)';
+    document.getElementById('eco-mode-label').textContent = enabled
+      ? 'نظام التوفير مفعّل'
+      : 'نظام التوفير معطّل (ECONOMY_MODE=false)';
+    const badge = document.getElementById('eco-badge');
+    badge.className = 'badge ' + (enabled ? 'active' : 'inactive');
+    badge.textContent = enabled ? 'مفعّل' : 'معطّل';
+
+    document.getElementById('eco-total').textContent = fmtNum(d.total_requests_processed || 0);
+    document.getElementById('eco-saved').textContent = fmtNum(d.tokens_saved_total || 0);
+    document.getElementById('eco-pct').textContent   = (d.saving_pct || 0) + '%';
+    document.getElementById('eco-orig').textContent  = fmtNum(d.tokens_original_total || 0);
+    document.getElementById('eco-comp').textContent  = fmtNum(d.tokens_compressed_total || 0);
+
+    const pct = Math.min(d.saving_pct || 0, 100);
+    document.getElementById('eco-saving-bar').style.width = pct + '%';
+    document.getElementById('eco-bar-label').textContent  = pct + '% توفير';
+
+    const byType = d.by_type || {};
+    const total  = Math.max(Object.values(byType).reduce((a, b) => a + b, 0), 1);
+    document.querySelectorAll('.eco-type-row').forEach(row => {
+      const type    = row.dataset.type;
+      const count   = byType[type] || 0;
+      const pctType = Math.round(count / total * 100);
+      row.querySelector('.eco-type-count').textContent        = count;
+      row.querySelector('.eco-type-bar').style.width = pctType + '%';
+    });
+  } catch(e) { console.error('Economy load error:', e); }
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = 'toast '+type;
+  el.innerHTML = (type==='success'?'✅':type==='error'?'❌':'ℹ️') + ' ' + msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(), 4000);
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

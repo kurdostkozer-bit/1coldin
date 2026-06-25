@@ -1,0 +1,26 @@
+{
+  "name": "kurdbox-monorepo",
+  "version": "2.0.0",
+  "description": "KurdBox AI Gateway - Monorepo with unified commands",
+  "scripts": {
+    "start": "powershell -ExecutionPolicy Bypass -File ./start-all.ps1",
+    "stop": "powershell -ExecutionPolicy Bypass -File ./stop-all.ps1",
+    "backend:start": "cd backend && .\\start_dev.ps1",
+    "backend:stop": "powershell -Command \"Get-Process -Name python,uvicorn -ErrorAction SilentlyContinue | Stop-Process -Force\"",
+    "extension:dev": "cd extension && npm run dev",
+    "extension:build": "cd extension && npm run compile && npm run package",
+    "extension:install": "cd extension && npm run package && code --install-extension ./kurdbox-1.0.1.vsix --force",
+    "extension:reload": "cd extension && npm run quick-reload",
+    "dev": "concurrently \"npm run backend:start\" \"npm run extension:dev\"",
+    "install:all": "cd backend && pip install -r requirements.txt && cd ../extension && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kurdost/kurdbox"
+  },
+  "author": "Kurdost",
+  "license": "MIT"
+}

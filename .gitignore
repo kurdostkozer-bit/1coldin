@@ -1,0 +1,78 @@
+# KurdBox - Git Ignore File
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+ENV/
+.ENV
+
+# Encryption key (never commit to version control)
+.kurdost_enc_key
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Environment
+.env
+.env.local
+.env.*.local
+.kurdost_enc_key
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Extension
+*.vsix
+out/
+dist/
+
+# Logs
+*.log
+logs/
+server.log
+
+# OS
+Thumbs.db
+.DS_Store
+*.tmp
+*.temp
+
+# Archive
+_archive/
