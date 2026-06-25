@@ -95,10 +95,13 @@ def process(messages: list, max_tokens: int = 1024, has_attachment: bool = False
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
-            asyncio.ensure_future(_log_to_db(
-                classification.request_type.value,
-                tokens_original, tokens_compressed, strategy_used,
-            ))
+            try:
+                loop.create_task(_log_to_db(
+                    classification.request_type.value,
+                    tokens_original, tokens_compressed, strategy_used,
+                ))
+            except RuntimeError:
+                pass
     except RuntimeError:
         pass  # no event loop in sync context — skip logging
 

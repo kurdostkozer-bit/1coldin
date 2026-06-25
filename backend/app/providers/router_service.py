@@ -107,7 +107,8 @@ class ProviderRouter:
 
     def _maybe_reset_daily(self) -> None:
         """Reset requests_today counter at UTC midnight. Called inside lock."""
-        today = datetime.now(timezone.utc).day
+        now = datetime.now(timezone.utc)
+        today = now.date()
         if today != self._last_reset_day:
             self._last_reset_day = today
             for p in self._providers.values():

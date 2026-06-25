@@ -471,7 +471,7 @@ def test_key_recovery(auth, groq):
 # ══ 13. OpenAI-compat endpoint ════════════════════════════════════════════════
 
 def test_openai_compat_endpoint(auth):
-    resp = client.post("/api/v1/v1/chat/completions", json={
+    resp = client.post("/v1/chat/completions", json={
         "model": "llama-3.3-70b-versatile",
         "messages": [{"role": "user", "content": "Hello"}],
     }, headers=auth)
@@ -486,7 +486,7 @@ if __name__ == "__main__":
 
 def test_register_new_user():
     resp = client.post("/api/v1/auth/register", json={
-        "username": "testuser", "password": "securepass123"
+        "username": "testuser", "password": "SecurePass123"
     })
     assert resp.status_code == 201
     data = resp.json()
@@ -495,8 +495,8 @@ def test_register_new_user():
 
 
 def test_register_duplicate_rejected():
-    client.post("/api/v1/auth/register", json={"username": "dupuser", "password": "pass123"})
-    resp = client.post("/api/v1/auth/register", json={"username": "dupuser", "password": "pass456"})
+    client.post("/api/v1/auth/register", json={"username": "dupuser", "password": "Pass123A"})
+    resp = client.post("/api/v1/auth/register", json={"username": "dupuser", "password": "Pass456B"})
     assert resp.status_code == 409
 
 
@@ -508,15 +508,15 @@ def test_register_invalid_username():
 
 
 def test_register_then_login():
-    client.post("/api/v1/auth/register", json={"username": "loginuser", "password": "mypassword"})
-    resp = client.post("/api/v1/auth/login", json={"username": "loginuser", "password": "mypassword"})
+    client.post("/api/v1/auth/register", json={"username": "loginuser", "password": "MyPassword1"})
+    resp = client.post("/api/v1/auth/login", json={"username": "loginuser", "password": "MyPassword1"})
     assert resp.status_code == 200
     assert "access_token" in resp.json()
 
 
 def test_register_with_email():
     resp = client.post("/api/v1/auth/register", json={
-        "username": "emailuser", "password": "pass123", "email": "user@example.com"
+        "username": "emailuser", "password": "Pass123A", "email": "user@example.com"
     })
     assert resp.status_code == 201
 

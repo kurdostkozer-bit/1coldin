@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from typing import Optional
 
-from app.auth.dependencies import get_current_user
+from app.auth.dependencies import get_current_user, require_admin
 
 router = APIRouter(prefix="/budget", tags=["budget"])
 
@@ -25,13 +25,13 @@ async def get_budget(request: Request):
     return request.app.state.budget.to_dict()
 
 
-@router.post("", dependencies=[Depends(get_current_user)])
+@router.post("", dependencies=[Depends(require_admin)])
 async def set_budget(body: BudgetConfig, request: Request):
     request.app.state.budget.configure(body.daily_limit_usd, body.cheap_threshold_pct)
     return request.app.state.budget.to_dict()
 
 
-@router.post("/reset", dependencies=[Depends(get_current_user)])
+@router.post("/reset", dependencies=[Depends(require_admin)])
 async def reset_budget(request: Request):
     request.app.state.budget.reset()
     return request.app.state.budget.to_dict()

@@ -2,7 +2,7 @@
 chat/service.py — Routes chat requests to LLM providers via adapters.
 Handles: alias resolution, retry/failover (MAX_RETRIES=3), streaming.
 Stateless per request. Keys are decrypted ONCE at call time, never stored.
-Usage recording is fire-and-forget via asyncio.ensure_future.
+Usage recording is fire-and-forget via loop.create_task.
 """
 from __future__ import annotations
 
@@ -130,9 +130,14 @@ class ChatService:
         self._router.record_key_success(provider.id, pool_key, latency_ms)
 
         # Fire-and-forget usage recording — never blocks the response
-        asyncio.ensure_future(
-            self._record_usage(provider.id, model, pt, ct, latency_ms, cost, True)
-        )
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(
+                    self._record_usage(provider.id, model, pt, ct, latency_ms, cost, True)
+                )
+        except RuntimeError:
+            pass
 
         return (provider.id, latency_ms, data), ""
 
@@ -176,9 +181,14 @@ class ChatService:
                 est_completion = payload.get("max_tokens", 512) // 2
                 est_cost = estimate_cost(provider.id, est_prompt, est_completion)
 
-                asyncio.ensure_future(
-                    self._record_usage(provider.id, effective_model, est_prompt, est_completion, latency_ms, est_cost, True)
-                )
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_running():
+                        loop.create_task(
+                            self._record_usage(provider.id, effective_model, est_prompt, est_completion, latency_ms, est_cost, True)
+                        )
+                except RuntimeError:
+                    pass
 
                 yield f"data: {json.dumps({'type': 'done'})}\n\n"
                 return
@@ -214,6 +224,7 @@ class ChatService:
         except Exception as e:
             logger.warning(f"Usage recording failed (non-critical): {e}")
 
+    @staticmethod
     @staticmethod
     def _build_payload(request: ChatRequest, model: str) -> dict:
         messages = [m.model_dump() for m in request.messages]

@@ -185,7 +185,7 @@ export class ApiClient {
         if (!data.access_token) { throw new Error('لم يُرجع السيرفر توكناً.'); }
         await this.saveToken(data.access_token);
         const payload = this._decodeJwtPayload(data.access_token);
-        return { username: payload.username ?? username, isAdmin: !!payload.is_admin };
+        return { username: String(payload.username ?? username), isAdmin: !!payload.is_admin };
     }
 
     /** Register new account. Throws on error. First user becomes admin. */
@@ -204,7 +204,7 @@ export class ApiClient {
         if (!data.access_token) { throw new Error('لم يُرجع السيرفر توكناً.'); }
         await this.saveToken(data.access_token);
         const payload = this._decodeJwtPayload(data.access_token);
-        return { username: payload.username ?? username, isAdmin: !!payload.is_admin };
+        return { username: String(payload.username ?? username), isAdmin: !!payload.is_admin };
     }
 
     /** Decode JWT payload (base64) without verifying signature. */
@@ -337,7 +337,10 @@ export class ApiClient {
             throw new Error(msg);
         }
 
-        const reader = res.body!.getReader();
+        if (!res.body) {
+            throw new Error('Stream body is null — the server may have closed the connection unexpectedly.');
+        }
+        const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
         let receivedContent = false;
@@ -398,6 +401,7 @@ export class ApiClient {
         finishReason: string;
     }> {
         const token = await this.ensureToken();
+        if (!token) { throw new Error('يرجى تسجيل الدخول أولاً.'); }
         const url = await this.detectServerUrl();
         const res = await fetch(`${url}/api/v1/chat`, {
             method: 'POST',
@@ -406,7 +410,7 @@ export class ApiClient {
         });
         if (res.status === 401) {
             await this.clearToken();
-            throw new Error('Unauthorized — please log in again');
+            throw new Error('انتهت الجلسة — يرجى تسجيل الدخول مجدداً.');
         }
         const rawText = await res.text();
         if (!res.ok) { throw new Error(`chatWithTools failed (${res.status}): ${rawText.slice(0, 200)}`); }

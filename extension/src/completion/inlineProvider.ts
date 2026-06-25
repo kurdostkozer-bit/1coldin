@@ -8,7 +8,7 @@ import { ApiClient } from '../api/ApiClient';
 
 export class KurdBoxInlineProvider implements vscode.InlineCompletionItemProvider {
     private _client?: ApiClient;
-    private _debounceTimer: NodeJS.Timeout | undefined;
+    private _debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
     setClient(client: ApiClient) { this._client = client; }
 
